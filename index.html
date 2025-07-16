@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=960, initial-scale=1.0"/>
+  <title>Dark Forest Runner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="header">
+      <h1>🌑 Dark Forest Runner 🌑</h1>
+      <p id="instructions">
+        Gunakan <b>← →</b> untuk bergerak, <b>SPACE</b> untuk lompat.<br>
+        Kumpulkan kristal, hindari musuh, masuk portal untuk menang.<br>
+        Tekan <b>R</b> untuk restart.
+      </p>
+    </div>
+
+    <div id="ui">
+      <div id="score">Score: 0</div>
+      <div id="message"></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <footer>
+      <span>Made by Your Hugo &copy; 2025</span>
+    </footer>
+  </div>
+
+  <!-- Audio dan script tetap di luar container -->
+  <audio id="bgMusic" src="assets/audio/bg-music.wav" loop></audio>
+  <audio id="jumpSound" src="assets/audio/jump.wav"></audio>
+  <audio id="loseSound" src="assets/audio/lose.wav"></audio>
+  <audio id="winSound" src="assets/audio/win.wav"></audio>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+#container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  gap: 16px;
+}
+
+#header {
+  width: 100%;
+  text-align: center;
+  margin-top: 32px;
+  margin-bottom: 8px;
+  color: #ffe066;
+  text-shadow: 0 0 16px #222, 0 0 32px #ffe066;
+}
+
+#header h1 {
+  font-size: 48px;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+#instructions {
+  font-size: 20px;
+  color: #fff;
+  margin-bottom: 18px;
+  text-shadow: 0 0 8px #333;
+}
+
+#ui {
+  width: 100%;
+  color: #fff;
+  font-size: 24px;
+  text-align: center;
+  margin-bottom: 8px;
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#score {
+  font-size: 28px;
+  font-weight: bold;
+  text-shadow: 2px 2px 8px #000;
+  letter-spacing: 2px;
+}
+
+#message {
+  font-size: 36px;
+  color: #ffe066;
+  font-weight: bold;
+  text-shadow: 2px 2px 12px #222;
+  transition: transform 0.3s;
+}
+
+#message.win {
+  color: #7fff7f;
+  transform: scale(1.2);
+  text-shadow: 0 0 24px #7fff7f;
+}
+
+#message.lose {
+  color: #ff4f4f;
+  transform: scale(1.2);
+  text-shadow: 0 0 24px #ff4f4f;
+}
+
+#gameCanvas {
+  display: block;
+  background: #222;
+  width: 100%;
+  max-width: 960px;
+  height: 540px;
+  margin: 0 auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 8px #333 inset;
+  border-radius: 16px;
+  border: 2px solid #444;
+  position: relative;
+  z-index: 1;
+}
+
+footer {
+  width: 100%;
+  max-width: 960px;
+  text-align: center;
+  margin: 32px auto 0 auto;
+  color: #888;
+  font-size: 18px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px #222;
+}
+
+/* Responsive untuk layar kecil */
+@media (max-width: 1000px) {
+  #container, #header, #ui, #gameCanvas, footer {
+    max-width: 100vw;
+    width: 98vw;
+  }
+  #gameCanvas {
+    height: 40vw;
+    min-height: 240px;
+    max-height: 540px;
+  }
+  #header h1 {
+    font-size: 7vw;
+  }
+  #instructions, #score, #message {
+    font-size: 3vw;
+  }
+}
