@@ -1,3 +1,5 @@
+// === Dark Forest Runner (v2.0) - Sistem Level Sederhana ===
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 960;
@@ -6,13 +8,14 @@ canvas.height = 540;
 // UI
 const scoreText = document.getElementById("score");
 const messageText = document.getElementById("message");
+const livesText = document.getElementById("lives");
 
 // Audio
 const bgMusic = document.getElementById("bgMusic");
 const jumpSound = document.getElementById("jumpSound");
 const loseSound = document.getElementById("loseSound");
 const winSound = document.getElementById("winSound");
-bgMusic.volume = 0.3;
+bgMusic.volume = 0.5;
 bgMusic.play();
 
 // Assets
@@ -31,9 +34,14 @@ bulletImg.src = "assets/images/bullet.png";
 
 // Game State
 let score = 0;
+let lives = 3;
 let cameraX = 0;
 let gameOver = false;
 let started = false;
+let invincible = false;
+let invincibleTimer = 0;
+let currentLevel = 0;
+let paused = false;
 
 // Input
 let keys = {};
@@ -52,25 +60,52 @@ const player = {
 // Ground
 const ground = { x: 0, y: 500, w: 3000, h: 50 };
 
-// Enemy
-const enemy = { x: 700, y: 460, w: 40, h: 40, dir: 1, speed: 2, alive: true };
-
-// Portal
-const portal = { x: 2500, y: 460, w: 40, h: 40 };
-
-// Crystals
-const crystals = [
-  { x: 400, y: 460, collected: false },
-  { x: 800, y: 460, collected: false },
-  { x: 1200, y: 460, collected: false },
-  { x: 1600, y: 460, collected: false }
+// Level Data
+const levels = [
+  {
+    enemies: [
+      { x: 700, y: 460, dir: 1 },
+      { x: 1000, y: 460, dir: -1 },
+      { x: 1400, y: 460, dir: 1 }
+    ],
+    crystals: [
+      { x: 400, y: 460 },
+      { x: 800, y: 460 },
+      { x: 1200, y: 460 },
+      { x: 1600, y: 460 }
+    ],
+    portal: { x: 2500, y: 460 }
+  },
+  {
+    enemies: [
+      { x: 900, y: 460, dir: 1 },
+      { x: 1300, y: 460, dir: -1 },
+      { x: 1700, y: 460, dir: 1 }
+    ],
+    crystals: [
+      { x: 500, y: 460 },
+      { x: 1000, y: 460 },
+      { x: 1500, y: 460 },
+      { x: 2000, y: 460 }
+    ],
+    portal: { x: 2800, y: 460 }
+  }
 ];
 
-// Bullet
+let enemies = [];
+let crystals = [];
+let portal = {};
 let bullets = [];
-
-// Particle System
 let particles = [];
+
+function loadLevel(levelIndex) {
+  const level = levels[levelIndex];
+  enemies = level.enemies.map(e => ({ ...e, w: 40, h: 40, speed: 2, alive: true }));
+  crystals = level.crystals.map(c => ({ ...c, collected: false }));
+  portal = { ...level.portal, w: 40, h: 40 };
+  ground.w = 3000;
+}
+
 function spawnParticles(x, y, color = "orange") {
   for (let i = 0; i < 10; i++) {
     particles.push({
@@ -83,6 +118,7 @@ function spawnParticles(x, y, color = "orange") {
     });
   }
 }
+
 function updateParticles() {
   particles = particles.filter(p => p.life > 0);
   particles.forEach(p => {
@@ -92,50 +128,49 @@ function updateParticles() {
   });
 }
 
-// Reset Game
 function resetGame() {
   player.x = 100; player.y = 400;
   player.vx = 0; player.vy = 0;
-  enemy.x = 700; enemy.dir = 1; enemy.alive = true;
   score = 0; cameraX = 0;
-  gameOver = false; started = false;
-  crystals.forEach(c => c.collected = false);
+  lives = 3;
+  gameOver = false; started = false; invincible = false;
+  currentLevel = 0;
+  loadLevel(currentLevel);
   particles = [];
   bullets = [];
   messageText.textContent = "Tekan ← → untuk gerak, SPACE lompat, R untuk mulai ulang.";
   bgMusic.currentTime = 0; bgMusic.play();
+  livesText.textContent = "❤❤❤";
 }
 resetGame();
 
-// Restart dengan R
 document.addEventListener("keydown", (e) => {
   if (gameOver && e.code === "KeyR") resetGame();
 });
 
-// Clamp player agar tidak keluar area
 function clampPlayerPosition() {
   if (player.x < 0) player.x = 0;
   if (player.x + player.w > ground.w) player.x = ground.w - player.w;
   if (player.y < 0) player.y = 0;
 }
 
-// Main update
 function update() {
   if (gameOver) return;
-
-  // Mulai game saat tombol ditekan
   if (!started && (keys["ArrowLeft"] || keys["ArrowRight"] || keys["Space"])) {
     started = true;
     messageText.textContent = "";
   }
   if (!started) return;
 
-  // Movement
+  if (invincible) {
+    invincibleTimer--;
+    if (invincibleTimer <= 0) invincible = false;
+  }
+
   if (keys["ArrowLeft"]) player.vx = -player.speed;
   else if (keys["ArrowRight"]) player.vx = player.speed;
   else player.vx = 0;
 
-  // Lompat
   if (keys["Space"] && player.grounded && !player.jumping) {
     player.vy = -12;
     player.jumping = true;
@@ -145,13 +180,11 @@ function update() {
     spawnParticles(player.x + player.w / 2, player.y + player.h, "white");
   }
 
-  // Physics
-  player.vy += 0.6; // gravity
+  player.vy += 0.6;
   player.x += player.vx;
   player.y += player.vy;
   clampPlayerPosition();
 
-  // Ground collision
   if (player.y + player.h > ground.y) {
     player.y = ground.y - player.h;
     player.vy = 0;
@@ -159,43 +192,56 @@ function update() {
     player.jumping = false;
   }
 
-  // Jatuh ke bawah layar = kalah
   if (player.y > canvas.height) {
-    gameOver = true;
-    loseSound.currentTime = 0; loseSound.play();
-    messageText.textContent = "Kamu kalah! Tekan R untuk restart.";
-    messageText.className = "lose";
+    lives--;
     spawnParticles(player.x + player.w / 2, player.y + player.h / 2, "red");
+    if (lives <= 0) {
+      gameOver = true;
+      loseSound.currentTime = 0; loseSound.play();
+      messageText.textContent = "Kamu jatuh! Tekan R untuk restart.";
+      messageText.className = "lose";
+    } else {
+      player.x = 100;
+      player.y = 400;
+      player.vx = 0;
+      player.vy = 0;
+      messageText.textContent = `Kamu jatuh! Sisa nyawa: ${lives}`;
+      setTimeout(() => { messageText.textContent = ""; }, 1000);
+    }
     return;
   }
 
-  // Enemy patrol
-  enemy.x += enemy.dir * enemy.speed;
-  if (enemy.x < 650 || enemy.x > 850) enemy.dir *= -1;
+  enemies.forEach(enemy => {
+    if (!enemy.alive) return;
+    enemy.x += enemy.dir * enemy.speed;
+    if (enemy.x < 600 || enemy.x > 1600) enemy.dir *= -1;
 
-  // Collision: enemy
-  if (enemy.alive && checkCollision(player, enemy)) {
-    // Cek apakah player mengenai dari atas
-    if (player.vy > 0 && player.y + player.h - enemy.y < 20) {
-      // Hancurkan musuh
-      enemy.alive = false;
-      score += 50;
-      player.vy = -10; // bounce
-      spawnParticles(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "orange");
-      messageText.textContent = "Musuh dihancurkan!";
-      setTimeout(() => { messageText.textContent = ""; }, 800);
-    } else {
-      // Kalah jika kena dari samping/bawah
-      gameOver = true;
-      loseSound.currentTime = 0; loseSound.play();
-      messageText.textContent = "Kamu kalah! Tekan R untuk restart.";
-      messageText.className = "lose";
-      spawnParticles(player.x + player.w / 2, player.y + player.h / 2, "red");
-      return;
+    if (checkCollision(player, enemy)) {
+      if (player.vy > 0 && player.y + player.h - enemy.y < 20) {
+        enemy.alive = false;
+        score += 50;
+        player.vy = -10;
+        spawnParticles(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "orange");
+        messageText.textContent = "Musuh dihancurkan!";
+        setTimeout(() => { messageText.textContent = ""; }, 800);
+      } else if (!invincible) {
+        lives--;
+        invincible = true;
+        invincibleTimer = 60;
+        spawnParticles(player.x + player.w / 2, player.y + player.h / 2, "red");
+        if (lives <= 0) {
+          gameOver = true;
+          loseSound.currentTime = 0; loseSound.play();
+          messageText.textContent = "Kamu kalah! Tekan R untuk restart.";
+          messageText.className = "lose";
+        } else {
+          messageText.textContent = `Kena musuh! Sisa nyawa: ${lives}`;
+          setTimeout(() => { messageText.textContent = ""; }, 1000);
+        }
+      }
     }
-  }
+  });
 
-  // Collision: crystals
   crystals.forEach(c => {
     if (!c.collected && checkCollision(player, { x: c.x, y: c.y, w: 30, h: 30 })) {
       c.collected = true;
@@ -204,58 +250,52 @@ function update() {
     }
   });
 
-  // Win condition
   if (checkCollision(player, portal)) {
-    gameOver = true;
-    winSound.currentTime = 0; winSound.play();
-    messageText.textContent = "Kamu menang! Tekan R untuk restart.";
-    messageText.className = "win";
-    spawnParticles(player.x + player.w / 2, player.y + player.h / 2, "lime");
+    currentLevel++;
+    if (currentLevel >= levels.length) {
+      gameOver = true;
+      winSound.currentTime = 0; winSound.play();
+      messageText.textContent = "Kamu menyelesaikan semua level! Tekan R untuk ulangi.";
+      messageText.className = "win";
+    } else {
+      player.x = 100;
+      player.y = 400;
+      loadLevel(currentLevel);
+      messageText.textContent = `Level ${currentLevel + 1}`;
+      setTimeout(() => { messageText.textContent = ""; }, 1500);
+    }
     return;
   }
 
-  // Update camera
-  cameraX = player.x - canvas.width / 2 + player.w / 2;
   updateParticles();
+  updateBullets();
+  cameraX = player.x - canvas.width / 2 + player.w / 2;
   scoreText.textContent = `Score: ${score}`;
+  livesText.textContent = "❤".repeat(lives);
 }
 
-// Draw everything
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
   ctx.translate(-cameraX, 0);
-
-  // Background
-  ctx.drawImage(bgImg, 0, 0, 3000, 540);
-
-  // Ground
+  ctx.drawImage(bgImg, 0, 0, ground.w, canvas.height);
   ctx.fillStyle = "#333";
   ctx.fillRect(ground.x, ground.y, ground.w, ground.h);
 
-  // Crystals
   crystals.forEach(c => {
-    if (!c.collected)
-      ctx.drawImage(crystalImg, c.x, c.y, 30, 30);
+    if (!c.collected) ctx.drawImage(crystalImg, c.x, c.y, 30, 30);
   });
 
-  // Portal
   ctx.drawImage(portalImg, portal.x, portal.y, portal.w, portal.h);
 
-  // Enemy
-  if (enemy.alive) {
-    ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.w, enemy.h);
-  }
-
-  // Player
-  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-
-  // Bullets
-  bullets.forEach(b => {
-    ctx.drawImage(bulletImg, b.x, b.y, b.w, b.h);
+  enemies.forEach(enemy => {
+    if (enemy.alive) ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.w, enemy.h);
   });
 
-  // Particles
+  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+
+  bullets.forEach(b => ctx.drawImage(bulletImg, b.x, b.y, b.w, b.h));
+
   particles.forEach(p => {
     ctx.fillStyle = p.color;
     ctx.fillRect(p.x, p.y, p.size, p.size);
@@ -264,7 +304,6 @@ function draw() {
   ctx.restore();
 }
 
-// Collision helper
 function checkCollision(a, b) {
   return a.x < b.x + b.w &&
          a.x + a.w > b.x &&
@@ -272,18 +311,18 @@ function checkCollision(a, b) {
          a.y + a.h > b.y;
 }
 
-// Game loop
 function gameLoop() {
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
+  if (!paused && started && !gameOver) {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
 }
 gameLoop();
 
 document.addEventListener("keydown", (e) => {
   keys[e.code] = true;
   if (e.code === "KeyX" && !gameOver) {
-    // Tembak peluru ke kanan
     bullets.push({
       x: player.x + player.w,
       y: player.y + player.h / 2 - 8,
@@ -295,15 +334,49 @@ document.addEventListener("keydown", (e) => {
 });
 
 function updateBullets() {
-  bullets = bullets.filter(b => b.x < ground.w); // hapus peluru di luar layar
+  bullets = bullets.filter(b => b.x < ground.w);
   bullets.forEach(b => b.x += b.vx);
+
   bullets.forEach(b => {
-    if (enemy.alive && checkCollision(b, enemy)) {
-      enemy.alive = false;
-      score += 50;
-      spawnParticles(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "orange");
-      messageText.textContent = "Musuh ditembak!";
-      setTimeout(() => { messageText.textContent = ""; }, 800);
-    }
+    enemies.forEach(enemy => {
+      if (enemy.alive && checkCollision(b, enemy)) {
+        enemy.alive = false;
+        score += 50;
+        spawnParticles(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "orange");
+        messageText.textContent = "Musuh ditembak!";
+        setTimeout(() => { messageText.textContent = ""; }, 800);
+      }
+    });
   });
 }
+
+const startScreen = document.getElementById("startScreen");
+const pauseScreen = document.getElementById("pauseScreen");
+
+function startGame() {
+  startScreen.classList.remove("show");
+  started = true;
+  paused = false;
+  messageText.textContent = "";
+  bgMusic.play();
+  requestAnimationFrame(gameLoop);
+}
+
+function togglePause() {
+  if (!started || gameOver) return;
+  paused = !paused;
+  if (paused) {
+    pauseScreen.classList.add("show");
+    bgMusic.pause();
+  } else {
+    pauseScreen.classList.remove("show");
+    bgMusic.play();
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Escape") {
+    togglePause();
+  }
+});
