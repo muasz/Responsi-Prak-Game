@@ -25,6 +25,7 @@
       <div id="score">Score: 0</div>
       <div id="lives">❤️❤️❤️</div>
       <div id="message"></div>
+      <div class="level-indicator" id="levelIndicator">Level 1</div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -47,13 +48,24 @@
   </div>
 
   <div id="startScreen" class="overlay show">
-    <h1>🎮 Petualangan Kristal</h1>
-    <p>Gunakan ← → untuk bergerak, SPACE untuk lompat, X untuk menembak.</p>
-    <p class="mobile-hint">Atau gunakan tombol kontrol di layar untuk mobile</p>
-    <button onclick="startGame()">Mulai Game</button>
-    <button onclick="showTutorial()" class="settings-btn">📚 Tutorial</button>
-    <button onclick="showSettings()" class="settings-btn">⚙️ Settings</button>
-    <button onclick="showHighScores()" class="settings-btn">🏆 High Scores</button>
+    <div id="loadingContent" style="display: none;">
+      <h1>🌑 Loading Dark Forest... 🌑</h1>
+      <div class="loading-spinner"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <p id="loadingText">Loading assets...</p>
+    </div>
+    
+    <div id="menuContent">
+      <h1>🎮 Petualangan Kristal</h1>
+      <p>Gunakan ← → untuk bergerak, SPACE untuk lompat, X untuk menembak.</p>
+      <p class="mobile-hint">Atau gunakan tombol kontrol di layar untuk mobile</p>
+      <button onclick="startGame()">Mulai Game</button>
+      <button onclick="showTutorial()" class="settings-btn">📚 Tutorial</button>
+      <button onclick="showSettings()" class="settings-btn">⚙️ Settings</button>
+      <button onclick="showHighScores()" class="settings-btn">🏆 High Scores</button>
+    </div>
   </div>
 
   <div id="pauseScreen" class="overlay">

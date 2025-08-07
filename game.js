@@ -29,10 +29,56 @@ if (isMobile) {
   }, { passive: false });
 }
 
-// UI
+// UI Elements
 const scoreText = document.getElementById("score");
 const messageText = document.getElementById("message");
 const livesText = document.getElementById("lives");
+const levelIndicator = document.getElementById("levelIndicator");
+
+// Loading Screen Management
+const loadingManager = {
+  showLoading() {
+    const loadingContent = document.getElementById("loadingContent");
+    const menuContent = document.getElementById("menuContent");
+    if (loadingContent && menuContent) {
+      loadingContent.style.display = "block";
+      menuContent.style.display = "none";
+    }
+  },
+  
+  hideLoading() {
+    const loadingContent = document.getElementById("loadingContent");
+    const menuContent = document.getElementById("menuContent");
+    if (loadingContent && menuContent) {
+      loadingContent.style.display = "none";
+      menuContent.style.display = "block";
+    }
+  },
+  
+  updateProgress(percentage, text = "Loading assets...") {
+    const progressFill = document.getElementById("progressFill");
+    const loadingText = document.getElementById("loadingText");
+    if (progressFill) {
+      progressFill.style.width = percentage + "%";
+    }
+    if (loadingText) {
+      loadingText.textContent = text;
+    }
+  }
+};
+
+// Level Display Manager
+const levelDisplay = {
+  update(level) {
+    if (levelIndicator) {
+      levelIndicator.textContent = `Level ${level}`;
+      levelIndicator.classList.add('level-update');
+      setTimeout(() => {
+        levelIndicator.classList.remove('level-update');
+      }, 1000);
+    }
+  }
+};
 
 // Enhanced Asset Manager
 const assetManager = {
@@ -47,20 +93,38 @@ const assetManager = {
   },
   
   async loadAll() {
-    const promises = this.loadQueue.map(({name, src}) => {
+    loadingManager.showLoading();
+    
+    const promises = this.loadQueue.map(({name, src}, index) => {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
           this.images[name] = img;
           this.loaded++;
+          const progress = (this.loaded / this.total) * 100;
+          loadingManager.updateProgress(progress, `Loading ${name}... (${this.loaded}/${this.total})`);
           resolve();
         };
-        img.onerror = reject;
+        img.onerror = () => {
+          console.warn(`Failed to load ${name} from ${src}`);
+          this.loaded++;
+          const progress = (this.loaded / this.total) * 100;
+          loadingManager.updateProgress(progress, `Loading... (${this.loaded}/${this.total})`);
+          resolve(); // Continue even if one image fails
+        };
         img.src = src;
       });
     });
     
     await Promise.all(promises);
+    loadingManager.updateProgress(100, "Ready to play!");
+    
+    // Small delay to show completion
+    setTimeout(() => {
+      loadingManager.hideLoading();
+    }, 500);
+    
+    return this.images;
   },
   
   get(name) {
@@ -665,6 +729,9 @@ function createObstacle(x, y, width, height, type = 'box') {
 function loadLevel(levelIndex) {
   const level = levels[levelIndex];
   
+  // Update level display
+  levelDisplay.update(levelIndex + 1);
+  
   // Create animated enemies
   enemies = level.enemies.map(e => {
     const enemyType = e.type || (Math.random() > 0.5 ? 'slime' : 'fly');
@@ -1060,6 +1127,19 @@ function update() {
       score += 10;
       gameStats.crystalsCollected++;
       spawnParticles(c.x + 15, c.y + 15, "cyan");
+      
+      // Enhanced feedback for crystal collection
+      vibrate(30); // Light vibration for crystal
+      
+      // Visual feedback for crystal collection
+      messageText.textContent = "Crystal collected! +10 points";
+      messageText.classList.add('powerup-collected');
+      setTimeout(() => {
+        messageText.classList.remove('powerup-collected');
+        if (messageText.textContent === "Crystal collected! +10 points") {
+          messageText.textContent = "";
+        }
+      }, 1000);
     }
   });
 
@@ -1071,6 +1151,24 @@ function update() {
       gameStats.powerUpsUsed++;
       applyPowerUp(p.type);
       spawnParticles(p.x + p.w/2, p.y + p.h/2, "gold");
+      
+      // Enhanced feedback for power-up
+      vibrate(100); // Stronger vibration for power-up
+      
+      // Enhanced visual feedback for power-up
+      const powerUpMessages = {
+        speed: "Speed Boost! 🏃‍♂️",
+        jump: "Double Jump! 🦘", 
+        shoot: "Fast Shooting! 💥"
+      };
+      messageText.textContent = powerUpMessages[p.type] || "Power-up activated!";
+      messageText.classList.add('powerup-collected');
+      setTimeout(() => {
+        messageText.classList.remove('powerup-collected');
+        if (messageText.textContent === powerUpMessages[p.type]) {
+          messageText.textContent = "";
+        }
+      }, 1500);
     }
   });
 
@@ -1327,7 +1425,27 @@ function updateBullets() {
 const startScreen = document.getElementById("startScreen");
 const pauseScreen = document.getElementById("pauseScreen");
 
-function startGame() {
+async function startGame() {
+  // Show loading screen while initializing
+  loadingManager.showLoading();
+  loadingManager.updateProgress(0, "Initializing game...");
+  
+  // Simulate initialization steps
+  await new Promise(resolve => setTimeout(resolve, 300));
+  loadingManager.updateProgress(25, "Loading sound effects...");
+  
+  await new Promise(resolve => setTimeout(resolve, 200));
+  loadingManager.updateProgress(50, "Setting up level...");
+  
+  await new Promise(resolve => setTimeout(resolve, 200));
+  loadingManager.updateProgress(75, "Starting engines...");
+  
+  await new Promise(resolve => setTimeout(resolve, 200));
+  loadingManager.updateProgress(100, "Ready to play!");
+  
+  // Small delay to show completion
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
   startScreen.classList.remove("show");
   started = true;
   paused = false;
