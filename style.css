@@ -77,10 +77,10 @@ body {
   animation: containerFloat 6s ease-in-out infinite;
 }
 
-/* Floating animation for container */
+/* Floating animation for container - more subtle */
 @keyframes containerFloat {
   0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-2px) scale(1.001); }
+  50% { transform: translateY(-1px) scale(1.0005); }
 }
 
 #header {
@@ -101,7 +101,7 @@ body {
   overflow: hidden;
 }
 
-/* Add animated glow effect to header */
+/* Add animated glow effect to header - more subtle */
 #header::before {
   content: '';
   position: absolute;
@@ -109,8 +109,8 @@ body {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: shine 3s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  animation: shine 4s infinite;
 }
 
 @keyframes shine {
@@ -125,12 +125,12 @@ body {
   line-height: 1.2;
   position: relative;
   z-index: 1;
-  animation: titlePulse 2s ease-in-out infinite;
+  animation: titlePulse 3s ease-in-out infinite;
 }
 
 @keyframes titlePulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+  50% { transform: scale(1.01); }
 }
 
 #instructions {
@@ -183,7 +183,7 @@ body {
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     0 2px 0 #e91e63; }
   50% { box-shadow: 
-    0 6px 20px rgba(255, 71, 87, 0.5),
+    0 5px 18px rgba(255, 71, 87, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     0 2px 0 #e91e63; }
 }
@@ -225,12 +225,12 @@ body {
   text-shadow: 2px 2px 0 #000, 1px 1px 10px rgba(0,0,0,0.5);
   transition: all 0.3s ease;
   line-height: 1.4;
-  animation: messageFloat 2s ease-in-out infinite;
+  animation: messageFloat 3s ease-in-out infinite;
 }
 
 @keyframes messageFloat {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-3px); }
+  50% { transform: translateY(-1px); }
 }
 
 #gameCanvas {
@@ -260,9 +260,9 @@ body {
 }
 
 #gameCanvas:hover {
-  transform: scale(1.002);
+  transform: scale(1.001);
   box-shadow: 
-    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 10px 36px rgba(0, 0, 0, 0.35),
     inset 0 2px 0 rgba(255, 255, 255, 0.3),
     0 4px 0 #1976d2;
 }
@@ -306,10 +306,11 @@ footer {
 /* Mobile-First Responsive Design */
 @media (max-width: 479px) {
   .level-indicator {
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     font-size: 0.6rem;
-    padding: 6px 12px;
+    padding: 5px 10px;
+    border-width: 2px;
   }
   
   #message {
@@ -321,6 +322,16 @@ footer {
   #gameCanvas {
     border-radius: 12px;
     border-width: 3px;
+  }
+  
+  #ui {
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  
+  #header {
+    padding: 12px 10px 10px;
+    margin-bottom: 10px;
   }
 }
 
@@ -515,12 +526,12 @@ footer {
   font-weight: bold;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  animation: controlFloat 3s ease-in-out infinite;
+  animation: controlFloat 4s ease-in-out infinite;
 }
 
 @keyframes controlFloat {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-2px); }
+  50% { transform: translateY(-1px); }
 }
 
 .control-btn:active {
@@ -870,52 +881,54 @@ footer {
   50% { box-shadow: 0 0 20px rgba(255, 71, 87, 0.8); }
 }
 
-/* Level Indicator */
+/* Level Indicator - Improved positioning */
 .level-indicator {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: linear-gradient(135deg, rgba(255, 247, 0, 0.95) 0%, rgba(255, 235, 59, 0.98) 100%);
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(135deg, rgba(255, 247, 0, 0.92) 0%, rgba(255, 235, 59, 0.95) 100%);
   color: #333;
-  padding: 8px 16px;
-  border: 3px solid #ff4757;
-  border-radius: 20px;
-  font-size: 0.7rem;
+  padding: 6px 12px;
+  border: 2px solid #ff4757;
+  border-radius: 16px;
+  font-size: 0.65rem;
   font-weight: bold;
-  text-shadow: 1px 1px 0 #fff;
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.8);
   box-shadow: 
-    0 4px 16px rgba(255, 71, 87, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  animation: levelFloat 3s ease-in-out infinite;
-  z-index: 100;
-  transition: all 0.5s ease;
+    0 3px 12px rgba(255, 71, 87, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  animation: levelFloat 4s ease-in-out infinite;
+  z-index: 50;
+  transition: all 0.4s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .level-indicator.level-update {
-  animation: levelUpdate 1s ease-out;
+  animation: levelUpdate 0.8s ease-out;
 }
 
 @keyframes levelFloat {
   0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-4px) scale(1.05); }
+  50% { transform: translateY(-2px) scale(1.02); }
 }
 
 @keyframes levelUpdate {
   0% { 
     transform: scale(1) rotateY(0deg);
-    background: linear-gradient(135deg, rgba(255, 247, 0, 0.95) 0%, rgba(255, 235, 59, 0.98) 100%);
+    background: linear-gradient(135deg, rgba(255, 247, 0, 0.92) 0%, rgba(255, 235, 59, 0.95) 100%);
   }
   50% { 
-    transform: scale(1.3) rotateY(180deg);
+    transform: scale(1.15) rotateY(180deg);
     background: linear-gradient(135deg, #ff4757 0%, #ff3742 50%, #ff1744 100%);
     color: #fff;
-    text-shadow: 2px 2px 0 #000;
+    text-shadow: 1px 1px 0 #000;
   }
   100% { 
     transform: scale(1) rotateY(360deg);
-    background: linear-gradient(135deg, rgba(255, 247, 0, 0.95) 0%, rgba(255, 235, 59, 0.98) 100%);
+    background: linear-gradient(135deg, rgba(255, 247, 0, 0.92) 0%, rgba(255, 235, 59, 0.95) 100%);
     color: #333;
-    text-shadow: 1px 1px 0 #fff;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.8);
   }
 }
 
