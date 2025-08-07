@@ -607,25 +607,57 @@ class AnimatedEnemy {
   }
 }
 
-// Enhanced Level System with Obstacles
+// Enhanced Level System with Professional Obstacles
 function createObstacle(x, y, width, height, type = 'box') {
   return {
     x, y, width, height, type,
     render() {
       const img = assetManager.get(this.type);
       if (img) {
-        // Tile the obstacle image
-        for (let i = 0; i < this.width; i += 70) {
-          for (let j = 0; j < this.height; j += 70) {
-            ctx.drawImage(img, this.x + i, this.y + j, 
-              Math.min(70, this.width - i), 
-              Math.min(70, this.height - j));
+        // Professional tile rendering with proper alignment
+        const tileSize = 70;
+        for (let i = 0; i < this.width; i += tileSize) {
+          for (let j = 0; j < this.height; j += tileSize) {
+            const tileWidth = Math.min(tileSize, this.width - i);
+            const tileHeight = Math.min(tileSize, this.height - j);
+            ctx.drawImage(img, this.x + i, this.y + j, tileWidth, tileHeight);
           }
         }
+        
+        // Add subtle border for visual clarity
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        
       } else {
-        ctx.fillStyle = '#8B4513';
+        // Enhanced fallback with gradient and border
+        const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
+        if (this.type === 'box') {
+          gradient.addColorStop(0, '#D2B48C');
+          gradient.addColorStop(1, '#8B7355');
+        } else {
+          gradient.addColorStop(0, '#A0A0A0');
+          gradient.addColorStop(1, '#606060');
+        }
+        
+        ctx.fillStyle = gradient;
         ctx.fillRect(this.x, this.y, this.width, this.height);
+        
+        // Professional border
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
       }
+    },
+    
+    // Enhanced collision detection with pixel-perfect bounds
+    getBounds() {
+      return {
+        x: this.x,
+        y: this.y,
+        width: this.width,
+        height: this.height
+      };
     }
   };
 }
@@ -651,30 +683,48 @@ function loadLevel(levelIndex) {
   
   // Create varied platform layouts based on level
   if (levelIndex === 0) {
-    // Beginner level - simple platforms
+    // Beginner level - simple platforms with strategic obstacles
     platformSystem.createPlatform(0, 480, 400, 'grass');
     platformSystem.createPlatform(500, 450, 200, 'grass');
     platformSystem.createPlatform(800, 420, 250, 'grass');
     platformSystem.createPlatform(1200, 480, 300, 'grass');
     platformSystem.createPlatform(1600, 450, 200, 'grass');
+    
+    // Strategic obstacle placement - not blocking critical paths
+    obstacles.push(createObstacle(450, 410, 70, 70, 'box'));  // Small gap jump challenge
+    obstacles.push(createObstacle(1050, 380, 140, 70, 'stone')); // Platform gap challenge
+    
   } else if (levelIndex === 1) {
-    // Intermediate - more gaps and heights
+    // Intermediate - more gaps and heights with thoughtful obstacles
     platformSystem.createPlatform(0, 480, 300, 'grass');
     platformSystem.createPlatform(400, 400, 150, 'grass');
     platformSystem.createPlatform(650, 350, 200, 'grass');
     platformSystem.createPlatform(950, 300, 180, 'grass');
     platformSystem.createPlatform(1200, 380, 250, 'grass');
     platformSystem.createPlatform(1550, 430, 200, 'grass');
+    
+    // Carefully placed obstacles that enhance difficulty without frustration
+    obstacles.push(createObstacle(350, 460, 70, 70, 'box'));   // Before first jump
+    obstacles.push(createObstacle(580, 310, 70, 70, 'stone')); // On platform edge
+    obstacles.push(createObstacle(1130, 340, 70, 70, 'box'));  // Between platforms
+    
   } else if (levelIndex === 2) {
-    // Advanced - vertical challenges
+    // Advanced - vertical challenges with precision obstacles
     platformSystem.createPlatform(0, 480, 250, 'grass');
     platformSystem.createPlatform(350, 380, 120, 'grass');
     platformSystem.createPlatform(550, 280, 150, 'grass');
     platformSystem.createPlatform(800, 200, 120, 'grass');
     platformSystem.createPlatform(1000, 320, 180, 'grass');
     platformSystem.createPlatform(1300, 400, 200, 'grass');
+    
+    // Obstacles that require careful timing and skill
+    obstacles.push(createObstacle(280, 440, 70, 70, 'stone')); // Jump timing challenge
+    obstacles.push(createObstacle(470, 340, 70, 70, 'box'));   // Platform precision
+    obstacles.push(createObstacle(720, 160, 70, 70, 'stone')); // High platform challenge
+    obstacles.push(createObstacle(1220, 360, 70, 70, 'box'));  // Landing challenge
+    
   } else if (levelIndex === 3) {
-    // Expert - precise jumping required
+    // Expert - precise jumping required with expert obstacle placement
     platformSystem.createPlatform(0, 480, 200, 'grass');
     platformSystem.createPlatform(300, 350, 100, 'grass');
     platformSystem.createPlatform(500, 220, 120, 'grass');
@@ -682,8 +732,16 @@ function loadLevel(levelIndex) {
     platformSystem.createPlatform(950, 250, 150, 'grass');
     platformSystem.createPlatform(1200, 380, 180, 'grass');
     platformSystem.createPlatform(1500, 300, 200, 'grass');
+    
+    // Expert-level obstacle placement requiring mastery
+    obstacles.push(createObstacle(220, 440, 70, 70, 'box'));   // Early challenge
+    obstacles.push(createObstacle(420, 180, 70, 70, 'stone')); // Mid-air precision
+    obstacles.push(createObstacle(670, 110, 70, 70, 'box'));   // High-level skill
+    obstacles.push(createObstacle(1100, 210, 70, 70, 'stone')); // Expert timing
+    obstacles.push(createObstacle(1420, 260, 70, 70, 'box'));  // Final challenge
+    
   } else {
-    // Master level - extreme difficulty
+    // Master level - extreme difficulty with masterful obstacle design
     platformSystem.createPlatform(0, 480, 150, 'grass');
     platformSystem.createPlatform(250, 380, 80, 'grass');
     platformSystem.createPlatform(430, 250, 100, 'grass');
@@ -692,21 +750,14 @@ function loadLevel(levelIndex) {
     platformSystem.createPlatform(1000, 320, 100, 'grass');
     platformSystem.createPlatform(1200, 400, 150, 'grass');
     platformSystem.createPlatform(1450, 280, 180, 'grass');
-  }
-  
-  // Add dynamic obstacles for variety
-  const obstacleCount = 2 + levelIndex;
-  for (let i = 0; i < obstacleCount; i++) {
-    const x = 300 + (i * 400) + Math.random() * 100;
-    const y = 380 + Math.random() * 80;
-    const width = 70 + Math.random() * 70;
-    const height = 70;
-    const type = Math.random() > 0.5 ? 'box' : 'stone';
     
-    // Don't place obstacles too close to player start
-    if (x > 200) {
-      obstacles.push(createObstacle(x, y, width, height, type));
-    }
+    // Master-level obstacles requiring perfect execution
+    obstacles.push(createObstacle(170, 440, 70, 70, 'stone')); // Immediate challenge
+    obstacles.push(createObstacle(350, 210, 70, 70, 'box'));   // Precision jump
+    obstacles.push(createObstacle(550, 110, 70, 70, 'stone')); // Perfect timing
+    obstacles.push(createObstacle(720, 160, 70, 70, 'box'));   // Expert navigation
+    obstacles.push(createObstacle(920, 280, 70, 70, 'stone')); // Master timing
+    obstacles.push(createObstacle(1120, 360, 70, 70, 'box'));  // Final precision
   }
   if (levelIndex === 0) {
     platformSystem.createPlatform(0, 480, 400, 'grass');
@@ -881,23 +932,50 @@ function update() {
     if (currentLevel > 0) player.hasDoubleJump = true; // Reset double jump on landing
   }
 
-  // Check collision with obstacles
+  // Enhanced collision with obstacles - smooth and fair
   obstacles.forEach(obstacle => {
-    if (player.x < obstacle.x + obstacle.width &&
-        player.x + player.w > obstacle.x &&
-        player.y < obstacle.y + obstacle.height &&
-        player.y + player.h > obstacle.y) {
+    const bounds = obstacle.getBounds ? obstacle.getBounds() : obstacle;
+    
+    // More precise collision detection
+    if (player.x + player.w > bounds.x + 2 &&
+        player.x < bounds.x + bounds.width - 2 &&
+        player.y + player.h > bounds.y + 2 &&
+        player.y < bounds.y + bounds.height - 2) {
       
-      // Simple collision response - stop player movement
-      if (player.vx > 0) player.x = obstacle.x - player.w;
-      else if (player.vx < 0) player.x = obstacle.x + obstacle.width;
+      // Smart collision response based on player approach direction
+      const playerCenterX = player.x + player.w / 2;
+      const playerCenterY = player.y + player.h / 2;
+      const obstacleCenterX = bounds.x + bounds.width / 2;
+      const obstacleCenterY = bounds.y + bounds.height / 2;
       
-      if (player.vy > 0 && player.y < obstacle.y) {
-        player.y = obstacle.y - player.h;
-        player.vy = 0;
-        player.grounded = true;
-        player.jumping = false;
-        if (currentLevel > 0) player.hasDoubleJump = true;
+      const deltaX = playerCenterX - obstacleCenterX;
+      const deltaY = playerCenterY - obstacleCenterY;
+      
+      // Determine collision side and respond appropriately
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal collision
+        if (deltaX > 0) {
+          // Player hitting from right
+          player.x = bounds.x + bounds.width + 1;
+        } else {
+          // Player hitting from left
+          player.x = bounds.x - player.w - 1;
+        }
+        player.vx = 0; // Stop horizontal movement
+      } else {
+        // Vertical collision
+        if (deltaY > 0 && player.vy > 0) {
+          // Player landing on top
+          player.y = bounds.y - player.h;
+          player.vy = 0;
+          player.grounded = true;
+          player.jumping = false;
+          if (currentLevel > 0) player.hasDoubleJump = true;
+        } else if (deltaY < 0 && player.vy < 0) {
+          // Player hitting from below
+          player.y = bounds.y + bounds.height + 1;
+          player.vy = 0;
+        }
       }
     }
   });
@@ -1037,10 +1115,18 @@ function draw() {
   // Draw platforms using the new system
   platformSystem.render();
   
-  // Draw dynamic obstacles
+  // Draw dynamic obstacles with enhanced visuals
   obstacles.forEach(obstacle => {
     if (obstacle.render) {
       obstacle.render();
+      
+      // Add warning indicator when player is near
+      const distanceToPlayer = Math.abs(obstacle.x - player.x);
+      if (distanceToPlayer < 200) {
+        const alpha = Math.max(0.1, 1 - (distanceToPlayer / 200));
+        ctx.fillStyle = `rgba(255, 200, 0, ${alpha * 0.3})`;
+        ctx.fillRect(obstacle.x - 5, obstacle.y - 5, obstacle.width + 10, obstacle.height + 10);
+      }
     }
   });
   
