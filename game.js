@@ -5,6 +5,308 @@ const ctx = canvas.getContext("2d");
 canvas.width = 960;
 canvas.height = 540;
 
+// JavaScript Animation Engine - Replaces CSS Animations
+class AnimationEngine {
+  constructor() {
+    this.animations = new Map();
+    this.running = true;
+    this.lastFrame = performance.now();
+    this.update();
+  }
+
+  // Add animation to element
+  animate(element, properties) {
+    const id = element.id || element.className || Math.random().toString(36);
+    
+    const animation = {
+      element,
+      startTime: performance.now(),
+      duration: properties.duration || 1000,
+      easing: properties.easing || 'ease',
+      repeat: properties.repeat || false,
+      infinite: properties.infinite || false,
+      keyframes: properties.keyframes || {},
+      onComplete: properties.onComplete || null,
+      initialStyles: {},
+      currentFrame: 0
+    };
+
+    // Store initial styles
+    if (properties.keyframes['0%'] || properties.keyframes.from) {
+      const initial = properties.keyframes['0%'] || properties.keyframes.from;
+      Object.keys(initial).forEach(prop => {
+        animation.initialStyles[prop] = getComputedStyle(element)[prop];
+      });
+    }
+
+    this.animations.set(id, animation);
+    return id;
+  }
+
+  // Easing functions
+  easing = {
+    ease: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+    'ease-in': (t) => t * t,
+    'ease-out': (t) => t * (2 - t),
+    'ease-in-out': (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+    linear: (t) => t
+  };
+
+  // Parse CSS transform values
+  parseTransform(transform) {
+    const values = {
+      translateX: 0, translateY: 0, translateZ: 0,
+      scaleX: 1, scaleY: 1, scaleZ: 1,
+      rotateX: 0, rotateY: 0, rotateZ: 0
+    };
+    
+    if (!transform || transform === 'none') return values;
+    
+    const matches = transform.match(/(\w+)\(([^)]+)\)/g);
+    if (matches) {
+      matches.forEach(match => {
+        const [, prop, value] = match.match(/(\w+)\(([^)]+)\)/);
+        if (prop.includes('translate')) {
+          const nums = value.split(',').map(v => parseFloat(v));
+          if (prop === 'translateX') values.translateX = nums[0] || 0;
+          if (prop === 'translateY') values.translateY = nums[0] || 0;
+          if (prop === 'translate') {
+            values.translateX = nums[0] || 0;
+            values.translateY = nums[1] || nums[0] || 0;
+          }
+        } else if (prop.includes('scale')) {
+          const num = parseFloat(value);
+          if (prop === 'scale') values.scaleX = values.scaleY = num;
+          if (prop === 'scaleX') values.scaleX = num;
+          if (prop === 'scaleY') values.scaleY = num;
+        } else if (prop.includes('rotate')) {
+          const num = parseFloat(value);
+          if (prop === 'rotate') values.rotateZ = num;
+          if (prop === 'rotateX') values.rotateX = num;
+          if (prop === 'rotateY') values.rotateY = num;
+        }
+      });
+    }
+    return values;
+  }
+
+  // Build transform string
+  buildTransform(values) {
+    const parts = [];
+    if (values.translateX !== 0 || values.translateY !== 0) {
+      parts.push(`translate(${values.translateX}px, ${values.translateY}px)`);
+    }
+    if (values.scaleX !== 1 || values.scaleY !== 1) {
+      parts.push(`scale(${values.scaleX}, ${values.scaleY})`);
+    }
+    if (values.rotateZ !== 0) parts.push(`rotate(${values.rotateZ}deg)`);
+    if (values.rotateX !== 0) parts.push(`rotateX(${values.rotateX}deg)`);
+    if (values.rotateY !== 0) parts.push(`rotateY(${values.rotateY}deg)`);
+    return parts.length ? parts.join(' ') : 'none';
+  }
+
+  // Interpolate between values
+  interpolate(start, end, progress, unit = '') {
+    if (typeof start === 'number' && typeof end === 'number') {
+      return start + (end - start) * progress + unit;
+    }
+    if (typeof start === 'string' && typeof end === 'string') {
+      const startNum = parseFloat(start);
+      const endNum = parseFloat(end);
+      if (!isNaN(startNum) && !isNaN(endNum)) {
+        return startNum + (endNum - startNum) * progress + unit;
+      }
+    }
+    return progress < 0.5 ? start : end;
+  }
+
+  // Update animations
+  update() {
+    if (!this.running) return;
+
+    const currentTime = performance.now();
+    
+    this.animations.forEach((animation, id) => {
+      const elapsed = currentTime - animation.startTime;
+      let progress = Math.min(elapsed / animation.duration, 1);
+      
+      // Apply easing
+      const easingFunc = this.easing[animation.easing] || this.easing.ease;
+      const easedProgress = easingFunc(progress);
+      
+      // Apply keyframe styles
+      const keyframes = Object.keys(animation.keyframes);
+      if (keyframes.length >= 2) {
+        const styles = {};
+        
+        // Find current keyframe pair
+        let fromFrame = keyframes[0];
+        let toFrame = keyframes[1];
+        
+        for (let i = 0; i < keyframes.length - 1; i++) {
+          const currentPercent = parseFloat(keyframes[i].replace('%', '')) / 100;
+          const nextPercent = parseFloat(keyframes[i + 1].replace('%', '')) / 100;
+          
+          if (easedProgress >= currentPercent && easedProgress <= nextPercent) {
+            fromFrame = keyframes[i];
+            toFrame = keyframes[i + 1];
+            
+            const frameProgress = (easedProgress - currentPercent) / (nextPercent - currentPercent);
+            progress = frameProgress;
+            break;
+          }
+        }
+        
+        const fromStyles = animation.keyframes[fromFrame];
+        const toStyles = animation.keyframes[toFrame];
+        
+        // Interpolate styles
+        Object.keys(fromStyles).forEach(prop => {
+          if (toStyles[prop] !== undefined) {
+            if (prop === 'transform') {
+              const fromTransform = this.parseTransform(fromStyles[prop]);
+              const toTransform = this.parseTransform(toStyles[prop]);
+              const interpolated = {};
+              
+              Object.keys(fromTransform).forEach(key => {
+                interpolated[key] = this.interpolate(fromTransform[key], toTransform[key], progress);
+              });
+              
+              styles[prop] = this.buildTransform(interpolated);
+            } else {
+              styles[prop] = this.interpolate(fromStyles[prop], toStyles[prop], progress);
+            }
+          }
+        });
+        
+        // Apply styles to element
+        Object.keys(styles).forEach(prop => {
+          if (prop === 'transform') {
+            animation.element.style.transform = styles[prop];
+          } else {
+            animation.element.style[prop] = styles[prop];
+          }
+        });
+      }
+      
+      // Check if animation is complete
+      if (elapsed >= animation.duration) {
+        if (animation.infinite) {
+          animation.startTime = currentTime;
+        } else if (animation.repeat && animation.repeat > 1) {
+          animation.repeat--;
+          animation.startTime = currentTime;
+        } else {
+          // Animation complete
+          if (animation.onComplete) animation.onComplete();
+          this.animations.delete(id);
+        }
+      }
+    });
+    
+    requestAnimationFrame(() => this.update());
+  }
+
+  // Stop animation
+  stop(id) {
+    this.animations.delete(id);
+  }
+
+  // Stop all animations
+  stopAll() {
+    this.animations.clear();
+  }
+
+  // Predefined animation presets
+  presets = {
+    fadeIn: (element, duration = 500) => {
+      return this.animate(element, {
+        duration,
+        keyframes: {
+          'from': { opacity: '0' },
+          'to': { opacity: '1' }
+        }
+      });
+    },
+    
+    slideInUp: (element, duration = 500) => {
+      return this.animate(element, {
+        duration,
+        easing: 'ease-out',
+        keyframes: {
+          'from': { transform: 'translateY(50px)', opacity: '0' },
+          'to': { transform: 'translateY(0px)', opacity: '1' }
+        }
+      });
+    },
+    
+    bounce: (element, duration = 600) => {
+      return this.animate(element, {
+        duration,
+        easing: 'ease-out',
+        keyframes: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.05)' },
+          '100%': { transform: 'scale(1)' }
+        }
+      });
+    },
+    
+    pulse: (element, duration = 2000) => {
+      return this.animate(element, {
+        duration,
+        infinite: true,
+        keyframes: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.02)' },
+          '100%': { transform: 'scale(1)' }
+        }
+      });
+    },
+    
+    float: (element, duration = 3000) => {
+      return this.animate(element, {
+        duration,
+        infinite: true,
+        easing: 'ease-in-out',
+        keyframes: {
+          '0%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-2px)' },
+          '100%': { transform: 'translateY(0px)' }
+        }
+      });
+    },
+    
+    spin: (element, duration = 1500) => {
+      return this.animate(element, {
+        duration,
+        infinite: true,
+        easing: 'linear',
+        keyframes: {
+          'from': { transform: 'rotate(0deg)' },
+          'to': { transform: 'rotate(360deg)' }
+        }
+      });
+    },
+    
+    glow: (element, duration = 2000) => {
+      return this.animate(element, {
+        duration,
+        infinite: true,
+        easing: 'ease-in-out',
+        keyframes: {
+          '0%': { boxShadow: '0 4px 16px rgba(255, 71, 87, 0.3)' },
+          '50%': { boxShadow: '0 6px 20px rgba(255, 71, 87, 0.5)' },
+          '100%': { boxShadow: '0 4px 16px rgba(255, 71, 87, 0.3)' }
+        }
+      });
+    }
+  };
+}
+
+// Initialize Animation Engine
+const animationEngine = new AnimationEngine();
+
 // Mobile detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
                  ('ontouchstart' in window) || 
@@ -73,6 +375,10 @@ const levelDisplay = {
     if (levelIndicator) {
       levelIndicator.textContent = `Level ${level}`;
       levelIndicator.classList.add('level-update');
+      
+      // Trigger level update animation
+      gameAnimations.updateLevel();
+      
       setTimeout(() => {
         levelIndicator.classList.remove('level-update');
       }, 1000);
@@ -1079,6 +1385,11 @@ function update() {
       loseSound.currentTime = 0; loseSound.play();
       messageText.textContent = "Game Over! Tekan R untuk restart atau lihat High Scores.";
       messageText.className = "lose";
+      
+      // Trigger game over animation
+      setTimeout(() => {
+        gameAnimations.gameOverSlide(messageText);
+      }, 100);
     } else {
       player.x = 100;
       player.y = 400;
@@ -1183,6 +1494,11 @@ function update() {
       Stats: ${gameStats.totalJumps} lompatan, ${gameStats.totalShots} tembakan, 
       ${gameStats.enemiesKilled} musuh dikalahkan!`;
       messageText.className = "win";
+      
+      // Trigger victory animation
+      setTimeout(() => {
+        gameAnimations.victoryBounce(messageText);
+      }, 100);
     } else {
       player.x = 100;
       player.y = 400;
@@ -1584,7 +1900,9 @@ function setupMobileControls() {
 // Settings Functions
 function showSettings() {
   try {
-    document.getElementById('settingsScreen').classList.add('show');
+    const settingsScreen = document.getElementById('settingsScreen');
+    settingsScreen.classList.add('show');
+    gameAnimations.overlayFadeIn(settingsScreen);
     
     // Update sliders
     document.getElementById('musicVolume').value = gameSettings.musicVolume * 100;
@@ -1635,6 +1953,7 @@ function showHighScores() {
   }
   
   screen.classList.add('show');
+  gameAnimations.overlayFadeIn(screen);
 }
 
 function closeHighScore() {
@@ -1672,7 +1991,9 @@ setupMobileControls();
 
 // Tutorial Functions
 function showTutorial() {
-  document.getElementById('tutorialScreen').classList.add('show');
+  const tutorialScreen = document.getElementById('tutorialScreen');
+  tutorialScreen.classList.add('show');
+  gameAnimations.overlayFadeIn(tutorialScreen);
 }
 
 function closeTutorial() {
@@ -1768,11 +2089,247 @@ async function initGame() {
     
     console.log('Game initialized successfully!');
     console.log('Enhanced features: Parallax backgrounds, animated enemies, platform system');
+    
+    // Initialize JavaScript animations
+    initializeAnimations();
   } catch (error) {
     console.error('Initialization error:', error);
     alert('Game failed to initialize. Please refresh the page.');
   }
 }
+
+// Initialize JavaScript Animations (replaces CSS animations)
+function initializeAnimations() {
+  console.log('Initializing JavaScript animation system...');
+  
+  // Header title pulse animation
+  const headerTitle = document.querySelector('#header h1');
+  if (headerTitle) {
+    animationEngine.presets.pulse(headerTitle, 3000);
+  }
+  
+  // Score/lives info floating animation
+  const infoPanel = document.getElementById('info');
+  if (infoPanel) {
+    animationEngine.presets.glow(infoPanel, 3000);
+  }
+  
+  // Message floating animation
+  const messageElement = document.getElementById('message');
+  if (messageElement) {
+    animationEngine.presets.float(messageElement, 3000);
+  }
+  
+  // Footer glow animation
+  const footer = document.querySelector('footer');
+  if (footer) {
+    animationEngine.presets.glow(footer, 4000);
+  }
+  
+  // Control buttons floating animation
+  const controlBtns = document.querySelectorAll('.control-btn');
+  controlBtns.forEach((btn, index) => {
+    setTimeout(() => {
+      animationEngine.presets.float(btn, 4000);
+    }, index * 200); // Staggered start
+  });
+  
+  // Overlay buttons pulse animation
+  const overlayBtns = document.querySelectorAll('.overlay button');
+  overlayBtns.forEach(btn => {
+    animationEngine.presets.pulse(btn, 2000);
+  });
+  
+  // Loading spinner rotation
+  const loadingSpinner = document.querySelector('.loading-spinner');
+  if (loadingSpinner) {
+    animationEngine.presets.spin(loadingSpinner, 1500);
+  }
+  
+  // Progress bar shine effect
+  const progressFill = document.querySelector('.progress-fill');
+  if (progressFill) {
+    animationEngine.animate(progressFill, {
+      duration: 2000,
+      infinite: true,
+      easing: 'ease-in-out',
+      keyframes: {
+        '0%': { boxShadow: '0 0 10px rgba(255, 247, 0, 0.5)' },
+        '50%': { boxShadow: '0 0 20px rgba(255, 71, 87, 0.8)' },
+        '100%': { boxShadow: '0 0 10px rgba(255, 247, 0, 0.5)' }
+      }
+    });
+  }
+  
+  // Level indicator floating animation
+  const levelIndicator = document.querySelector('.level-indicator');
+  if (levelIndicator) {
+    animationEngine.presets.float(levelIndicator, 4000);
+  }
+  
+  // Add hover animations for interactive elements
+  addHoverAnimations();
+  
+  console.log('JavaScript animations initialized successfully!');
+}
+
+// Add hover and interaction animations
+function addHoverAnimations() {
+  // Enhanced button hover effects
+  const buttons = document.querySelectorAll('button, .control-btn');
+  buttons.forEach(btn => {
+    btn.addEventListener('mouseenter', () => {
+      if (!isMobile) {
+        animationEngine.animate(btn, {
+          duration: 200,
+          easing: 'ease-out',
+          keyframes: {
+            'from': { transform: 'scale(1)' },
+            'to': { transform: 'scale(1.05)' }
+          }
+        });
+      }
+    });
+    
+    btn.addEventListener('mouseleave', () => {
+      if (!isMobile) {
+        animationEngine.animate(btn, {
+          duration: 200,
+          easing: 'ease-out',
+          keyframes: {
+            'from': { transform: 'scale(1.05)' },
+            'to': { transform: 'scale(1)' }
+          }
+        });
+      }
+    });
+    
+    btn.addEventListener('click', () => {
+      animationEngine.animate(btn, {
+        duration: 150,
+        easing: 'ease-out',
+        keyframes: {
+          '0%': { transform: 'scale(1.05)' },
+          '50%': { transform: 'scale(0.95)' },
+          '100%': { transform: 'scale(1)' }
+        }
+      });
+    });
+  });
+  
+  // Canvas hover effect
+  const canvas = document.getElementById('gameCanvas');
+  if (canvas) {
+    canvas.addEventListener('mouseenter', () => {
+      if (!isMobile) {
+        animationEngine.animate(canvas, {
+          duration: 300,
+          easing: 'ease-out',
+          keyframes: {
+            'from': { transform: 'scale(1)' },
+            'to': { transform: 'scale(1.001)' }
+          }
+        });
+      }
+    });
+    
+    canvas.addEventListener('mouseleave', () => {
+      if (!isMobile) {
+        animationEngine.animate(canvas, {
+          duration: 300,
+          easing: 'ease-out',
+          keyframes: {
+            'from': { transform: 'scale(1.001)' },
+            'to': { transform: 'scale(1)' }
+          }
+        });
+      }
+    });
+  }
+}
+
+// Animation utility functions for game events
+const gameAnimations = {
+  // Level update animation
+  updateLevel() {
+    const levelIndicator = document.querySelector('.level-indicator');
+    if (levelIndicator) {
+      animationEngine.animate(levelIndicator, {
+        duration: 800,
+        easing: 'ease-out',
+        keyframes: {
+          '0%': { 
+            transform: 'scale(1) rotateY(0deg)',
+            background: 'linear-gradient(135deg, rgba(255, 247, 0, 0.92) 0%, rgba(255, 235, 59, 0.95) 100%)'
+          },
+          '50%': { 
+            transform: 'scale(1.15) rotateY(180deg)',
+            background: 'linear-gradient(135deg, #ff4757 0%, #ff3742 50%, #ff1744 100%)',
+            color: '#fff'
+          },
+          '100%': { 
+            transform: 'scale(1) rotateY(360deg)',
+            background: 'linear-gradient(135deg, rgba(255, 247, 0, 0.92) 0%, rgba(255, 235, 59, 0.95) 100%)',
+            color: '#333'
+          }
+        }
+      });
+    }
+  },
+  
+  // Power-up collection flash
+  powerupFlash(element) {
+    animationEngine.animate(element, {
+      duration: 500,
+      easing: 'ease-out',
+      keyframes: {
+        '0%': { backgroundColor: 'rgba(255, 247, 0, 0.8)' },
+        '50%': { backgroundColor: 'rgba(255, 71, 87, 0.8)' },
+        '100%': { backgroundColor: 'transparent' }
+      }
+    });
+  },
+  
+  // Game over screen slide in
+  gameOverSlide(element) {
+    animationEngine.animate(element, {
+      duration: 500,
+      easing: 'ease-out',
+      keyframes: {
+        'from': { transform: 'translateY(-50px)', opacity: '0' },
+        'to': { transform: 'translateY(0)', opacity: '1' }
+      }
+    });
+  },
+  
+  // Victory screen bounce
+  victoryBounce(element) {
+    animationEngine.animate(element, {
+      duration: 700,
+      easing: 'ease-out',
+      keyframes: {
+        '0%': { transform: 'scale(0.5)', opacity: '0' },
+        '50%': { transform: 'scale(1.2)' },
+        '100%': { transform: 'scale(1)', opacity: '1' }
+      }
+    });
+  },
+  
+  // Overlay fade in
+  overlayFadeIn(element) {
+    animationEngine.animate(element, {
+      duration: 500,
+      easing: 'ease-out',
+      keyframes: {
+        'from': { opacity: '0', transform: 'scale(0.9)' },
+        'to': { opacity: '1', transform: 'scale(1)' }
+      }
+    });
+  }
+};
+
+// Make game animations globally available
+window.gameAnimations = gameAnimations;
 
 // Start initialization when page loads
 if (document.readyState === 'loading') {
