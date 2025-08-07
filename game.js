@@ -761,48 +761,80 @@ function setupMobileControls() {
   leftBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.left = true;
+    console.log('Left button pressed');
   });
   leftBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
     mobileInput.left = false;
+    console.log('Left button released');
   });
 
   rightBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.right = true;
+    console.log('Right button pressed');
   });
   rightBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
     mobileInput.right = false;
+    console.log('Right button released');
   });
 
   jumpBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.jump = true;
+    console.log('Jump button pressed');
   });
   jumpBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
     mobileInput.jump = false;
+    console.log('Jump button released');
   });
 
   shootBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.shoot = true;
+    console.log('Shoot button pressed');
   });
   shootBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
     mobileInput.shoot = false;
+    console.log('Shoot button released');
   });
 
   // Mouse events as fallback
-  leftBtn.addEventListener('mousedown', () => mobileInput.left = true);
-  leftBtn.addEventListener('mouseup', () => mobileInput.left = false);
-  rightBtn.addEventListener('mousedown', () => mobileInput.right = true);
-  rightBtn.addEventListener('mouseup', () => mobileInput.right = false);
-  jumpBtn.addEventListener('mousedown', () => mobileInput.jump = true);
-  jumpBtn.addEventListener('mouseup', () => mobileInput.jump = false);
-  shootBtn.addEventListener('mousedown', () => mobileInput.shoot = true);
-  shootBtn.addEventListener('mouseup', () => mobileInput.shoot = false);
+  leftBtn.addEventListener('mousedown', () => {
+    mobileInput.left = true;
+    console.log('Left button clicked (mouse)');
+  });
+  leftBtn.addEventListener('mouseup', () => {
+    mobileInput.left = false;
+    console.log('Left button released (mouse)');
+  });
+  rightBtn.addEventListener('mousedown', () => {
+    mobileInput.right = true;
+    console.log('Right button clicked (mouse)');
+  });
+  rightBtn.addEventListener('mouseup', () => {
+    mobileInput.right = false;
+    console.log('Right button released (mouse)');
+  });
+  jumpBtn.addEventListener('mousedown', () => {
+    mobileInput.jump = true;
+    console.log('Jump button clicked (mouse)');
+  });
+  jumpBtn.addEventListener('mouseup', () => {
+    mobileInput.jump = false;
+    console.log('Jump button released (mouse)');
+  });
+  shootBtn.addEventListener('mousedown', () => {
+    mobileInput.shoot = true;
+    console.log('Shoot button clicked (mouse)');
+  });
+  shootBtn.addEventListener('mouseup', () => {
+    mobileInput.shoot = false;
+    console.log('Shoot button released (mouse)');
+  });
   
   } catch (error) {
     console.error('Mobile controls setup error:', error);
