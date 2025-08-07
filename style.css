@@ -216,3 +216,207 @@ footer {
   background: #ff4141;
   color: #fff200;
 }
+
+/* Mobile Controls */
+#mobileControls {
+  position: fixed;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 500;
+  pointer-events: none;
+}
+
+.control-group {
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.control-btn {
+  width: 60px;
+  height: 60px;
+  background: #fff200;
+  color: #222;
+  border: 3px solid #ff4141;
+  border-radius: 50%;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 2px 2px 0 #ff4141;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn:active {
+  background: #ff4141;
+  color: #fff200;
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.control-btn.jump, .control-btn.shoot {
+  width: 80px;
+  height: 60px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+}
+
+/* Hide mobile controls on desktop */
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-hint {
+    display: block !important;
+    font-size: 0.7rem;
+    margin-top: 10px;
+  }
+}
+
+.mobile-hint {
+  display: none;
+}
+
+/* Settings Screen Styles */
+.settings-content {
+  background: #1e90ff;
+  border: 3px solid #fff;
+  border-radius: 0;
+  padding: 20px;
+  margin: 20px;
+  min-width: 300px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 15px 0;
+  font-size: 0.8rem;
+}
+
+.setting-item label {
+  flex: 1;
+  text-align: left;
+}
+
+.setting-item input[type="range"] {
+  flex: 1;
+  margin: 0 10px;
+}
+
+.setting-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.settings-btn {
+  background: #1e90ff !important;
+  color: #fff !important;
+  margin-left: 10px !important;
+}
+
+/* High Score Styles */
+#highScoreList {
+  background: #1e90ff;
+  border: 3px solid #fff;
+  border-radius: 0;
+  padding: 20px;
+  margin: 20px;
+  min-width: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.score-entry {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+  padding: 10px;
+  background: #fff200;
+  color: #222;
+  border: 2px solid #ff4141;
+}
+
+/* Tutorial Styles */
+.tutorial-content {
+  background: #1e90ff;
+  border: 3px solid #fff;
+  border-radius: 0;
+  padding: 20px;
+  margin: 20px;
+  max-width: 400px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.tutorial-step {
+  margin: 20px 0;
+  padding: 15px;
+  background: #fff200;
+  color: #222;
+  border: 2px solid #ff4141;
+}
+
+.tutorial-step h3 {
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+}
+
+.tutorial-step p {
+  margin: 5px 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+/* Loading Screen Styles */
+.loading-bar {
+  width: 300px;
+  height: 20px;
+  background: #333;
+  border: 3px solid #fff;
+  margin: 20px auto;
+  position: relative;
+  overflow: hidden;
+}
+
+#loadingProgress {
+  height: 100%;
+  background: linear-gradient(90deg, #fff200, #ff4141);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* Performance optimizations */
+.overlay {
+  backdrop-filter: blur(5px);
+}
+
+@media (max-width: 767px) {
+  .tutorial-content {
+    max-width: 90vw;
+    max-height: 70vh;
+  }
+  
+  .tutorial-step {
+    padding: 10px;
+  }
+  
+  .tutorial-step h3 {
+    font-size: 0.8rem;
+  }
+  
+  .tutorial-step p {
+    font-size: 0.6rem;
+  }
+}

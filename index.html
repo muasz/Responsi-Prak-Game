@@ -25,6 +25,18 @@
 
     <canvas id="gameCanvas"></canvas>
 
+    <!-- Mobile Controls -->
+    <div id="mobileControls" class="mobile-only">
+      <div class="control-group left">
+        <button id="leftBtn" class="control-btn">←</button>
+        <button id="rightBtn" class="control-btn">→</button>
+      </div>
+      <div class="control-group right">
+        <button id="jumpBtn" class="control-btn jump">JUMP</button>
+        <button id="shootBtn" class="control-btn shoot">SHOOT</button>
+      </div>
+    </div>
+
     <footer>
       <span>Made by Your Hugo &copy; 2025</span>
     </footer>
@@ -33,12 +45,85 @@
   <div id="startScreen" class="overlay show">
     <h1>🎮 Petualangan Kristal</h1>
     <p>Gunakan ← → untuk bergerak, SPACE untuk lompat, X untuk menembak.</p>
+    <p class="mobile-hint">Atau gunakan tombol kontrol di layar untuk mobile</p>
     <button onclick="startGame()">Mulai Game</button>
+    <button onclick="showTutorial()" class="settings-btn">📚 Tutorial</button>
+    <button onclick="showSettings()" class="settings-btn">⚙️ Settings</button>
+    <button onclick="showHighScores()" class="settings-btn">🏆 High Scores</button>
   </div>
 
   <div id="pauseScreen" class="overlay">
     <h1>⏸ Game Dijeda</h1>
     <p>Tekan ESC lagi untuk lanjut.</p>
+  </div>
+
+  <!-- Settings Screen -->
+  <div id="settingsScreen" class="overlay">
+    <h1>⚙️ Settings</h1>
+    <div class="settings-content">
+      <div class="setting-item">
+        <label>🔊 Volume Music:</label>
+        <input type="range" id="musicVolume" min="0" max="100" value="50">
+        <span id="musicVolumeValue">50%</span>
+      </div>
+      <div class="setting-item">
+        <label>🔊 Volume SFX:</label>
+        <input type="range" id="sfxVolume" min="0" max="100" value="70">
+        <span id="sfxVolumeValue">70%</span>
+      </div>
+      <div class="setting-item">
+        <label>📱 Show Mobile Controls:</label>
+        <input type="checkbox" id="showMobileControls" checked>
+      </div>
+    </div>
+    <button onclick="closeSettings()">Tutup</button>
+    <button onclick="resetSettings()">Reset Default</button>
+  </div>
+
+  <!-- High Score Screen -->
+  <div id="highScoreScreen" class="overlay">
+    <h1>🏆 High Scores</h1>
+    <div id="highScoreList"></div>
+    <button onclick="closeHighScore()">Tutup</button>
+    <button onclick="clearHighScores()">Clear Scores</button>
+  </div>
+
+  <!-- Tutorial Screen -->
+  <div id="tutorialScreen" class="overlay">
+    <h1>📚 Tutorial</h1>
+    <div class="tutorial-content">
+      <div class="tutorial-step">
+        <h3>🎮 Kontrol Dasar</h3>
+        <p>← → : Bergerak kiri/kanan</p>
+        <p>SPACE : Lompat</p>
+        <p>X : Menembak</p>
+        <p>ESC : Pause/Resume</p>
+        <p>R : Restart (saat game over)</p>
+      </div>
+      <div class="tutorial-step">
+        <h3>💎 Power-ups</h3>
+        <p>↑↑ : Double Jump - Lompat dua kali</p>
+        <p>💨 : Fast Shoot - Tembakan lebih cepat</p>
+        <p>❤ : Extra Life - Nyawa tambahan</p>
+      </div>
+      <div class="tutorial-step">
+        <h3>🎯 Tujuan</h3>
+        <p>• Kumpulkan semua kristal biru</p>
+        <p>• Hindari atau tembak musuh merah</p>
+        <p>• Masuk ke portal untuk level selanjutnya</p>
+        <p>• Selesaikan 5 level untuk menang!</p>
+      </div>
+    </div>
+    <button onclick="closeTutorial()">Tutup</button>
+  </div>
+
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="overlay">
+    <h1>🎮 Loading...</h1>
+    <div class="loading-bar">
+      <div id="loadingProgress"></div>
+    </div>
+    <p>Memuat assets game...</p>
   </div>
 
   <!-- Audio dan script tetap di luar container -->
