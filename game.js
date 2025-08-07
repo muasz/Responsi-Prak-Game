@@ -1,4 +1,4 @@
-// === Dark Forest Runner (v3.0) - Enhanced Mobile-First Experience ===
+// === Dark Forest Runner (v4.0) - Enhanced with Asset Integration ===
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -33,6 +33,69 @@ if (isMobile) {
 const scoreText = document.getElementById("score");
 const messageText = document.getElementById("message");
 const livesText = document.getElementById("lives");
+
+// Enhanced Asset Manager
+const assetManager = {
+  images: {},
+  loadQueue: [],
+  loaded: 0,
+  total: 0,
+  
+  loadImage(name, src) {
+    this.total++;
+    this.loadQueue.push({name, src});
+  },
+  
+  async loadAll() {
+    const promises = this.loadQueue.map(({name, src}) => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          this.images[name] = img;
+          this.loaded++;
+          resolve();
+        };
+        img.onerror = reject;
+        img.src = src;
+      });
+    });
+    
+    await Promise.all(promises);
+  },
+  
+  get(name) {
+    return this.images[name];
+  }
+};
+
+// Load enhanced assets
+assetManager.loadImage('player', 'assets/images/player.png');
+assetManager.loadImage('enemy', 'assets/images/enemy.png');
+assetManager.loadImage('crystal', 'assets/images/crystal.png');
+assetManager.loadImage('bullet', 'assets/images/bullet.png');
+assetManager.loadImage('portal', 'assets/images/portal.png');
+
+// Background elements
+assetManager.loadImage('tree1', 'kenney_background-elements/PNG/tree01.png');
+assetManager.loadImage('tree2', 'kenney_background-elements/PNG/tree02.png');
+assetManager.loadImage('tree3', 'kenney_background-elements/PNG/tree03.png');
+assetManager.loadImage('tree4', 'kenney_background-elements/PNG/tree04.png');
+assetManager.loadImage('cloud1', 'kenney_background-elements/PNG/cloud1.png');
+assetManager.loadImage('cloud2', 'kenney_background-elements/PNG/cloud2.png');
+assetManager.loadImage('cloud3', 'kenney_background-elements/PNG/cloud3.png');
+
+// Platform tiles
+assetManager.loadImage('grassLeft', 'kenney_platformer-art-deluxe/Base pack/Tiles/grassLeft.png');
+assetManager.loadImage('grassMid', 'kenney_platformer-art-deluxe/Base pack/Tiles/grassMid.png');
+assetManager.loadImage('grassRight', 'kenney_platformer-art-deluxe/Base pack/Tiles/grassRight.png');
+assetManager.loadImage('stone', 'kenney_platformer-art-deluxe/Base pack/Tiles/stone.png');
+assetManager.loadImage('box', 'kenney_platformer-art-deluxe/Base pack/Tiles/box.png');
+
+// Enhanced enemies
+assetManager.loadImage('slimeWalk1', 'kenney_platformer-art-deluxe/Base pack/Enemies/slimeWalk1.png');
+assetManager.loadImage('slimeWalk2', 'kenney_platformer-art-deluxe/Base pack/Enemies/slimeWalk2.png');
+assetManager.loadImage('flyFly1', 'kenney_platformer-art-deluxe/Base pack/Enemies/flyFly1.png');
+assetManager.loadImage('flyFly2', 'kenney_platformer-art-deluxe/Base pack/Enemies/flyFly2.png');
 
 // Settings
 let gameSettings = {
@@ -79,6 +142,161 @@ const bgMusic = document.getElementById("bgMusic");
 const jumpSound = document.getElementById("jumpSound");
 const loseSound = document.getElementById("loseSound");
 const winSound = document.getElementById("winSound");
+
+// Enhanced Background System with Parallax
+const backgroundSystem = {
+  layers: [
+    { 
+      elements: [], 
+      speed: 0.2, 
+      type: 'cloud',
+      density: 0.3 
+    },
+    { 
+      elements: [], 
+      speed: 0.5, 
+      type: 'tree_far',
+      density: 0.4 
+    },
+    { 
+      elements: [], 
+      speed: 0.8, 
+      type: 'tree_near',
+      density: 0.6 
+    }
+  ],
+  
+  init() {
+    this.layers.forEach((layer, index) => {
+      this.generateElements(layer, index);
+    });
+  },
+  
+  generateElements(layer, layerIndex) {
+    const elementCount = Math.floor(canvas.width / 200 * layer.density);
+    
+    for (let i = 0; i < elementCount; i++) {
+      let element = {
+        x: (i * 200) + Math.random() * 100,
+        y: 0,
+        scale: 0.3 + Math.random() * 0.4,
+        image: null
+      };
+      
+      if (layer.type === 'cloud') {
+        element.y = 50 + Math.random() * 150;
+        element.image = `cloud${Math.floor(Math.random() * 3) + 1}`;
+        element.scale = 0.2 + Math.random() * 0.3;
+      } else if (layer.type === 'tree_far') {
+        element.y = canvas.height - 200 - Math.random() * 50;
+        element.image = `tree${Math.floor(Math.random() * 4) + 1}`;
+        element.scale = 0.4 + Math.random() * 0.3;
+      } else if (layer.type === 'tree_near') {
+        element.y = canvas.height - 250 - Math.random() * 100;
+        element.image = `tree${Math.floor(Math.random() * 4) + 1}`;
+        element.scale = 0.6 + Math.random() * 0.4;
+      }
+      
+      layer.elements.push(element);
+    }
+  },
+  
+  update(scrollSpeed) {
+    this.layers.forEach(layer => {
+      layer.elements.forEach(element => {
+        element.x -= scrollSpeed * layer.speed;
+        
+        // Wrap around when element goes off screen
+        if (element.x + 200 < 0) {
+          element.x = canvas.width + Math.random() * 200;
+        }
+      });
+    });
+  },
+  
+  render() {
+    this.layers.forEach(layer => {
+      layer.elements.forEach(element => {
+        const img = assetManager.get(element.image);
+        if (img) {
+          ctx.save();
+          ctx.globalAlpha = 0.7; // Make background elements slightly transparent
+          ctx.drawImage(
+            img,
+            element.x,
+            element.y,
+            img.width * element.scale,
+            img.height * element.scale
+          );
+          ctx.restore();
+        }
+      });
+    });
+  }
+};
+
+// Enhanced Platform System
+const platformSystem = {
+  platforms: [],
+  tileSize: 70,
+  
+  createPlatform(x, y, width, type = 'grass') {
+    const platform = {
+      x, y, width, 
+      height: this.tileSize,
+      type,
+      tiles: []
+    };
+    
+    // Generate tile pattern
+    const tileCount = Math.ceil(width / this.tileSize);
+    for (let i = 0; i < tileCount; i++) {
+      let tileType = `${type}Mid`;
+      if (i === 0) tileType = `${type}Left`;
+      if (i === tileCount - 1) tileType = `${type}Right`;
+      
+      platform.tiles.push({
+        x: x + (i * this.tileSize),
+        y: y,
+        type: tileType
+      });
+    }
+    
+    this.platforms.push(platform);
+    return platform;
+  },
+  
+  render() {
+    this.platforms.forEach(platform => {
+      platform.tiles.forEach(tile => {
+        const img = assetManager.get(tile.type);
+        if (img) {
+          ctx.drawImage(img, tile.x, tile.y, this.tileSize, this.tileSize);
+        } else {
+          // Fallback to colored rectangles
+          ctx.fillStyle = platform.type === 'grass' ? '#4a7c2c' : '#8B4513';
+          ctx.fillRect(tile.x, tile.y, this.tileSize, this.tileSize);
+        }
+      });
+    });
+  },
+  
+  checkCollision(rect) {
+    for (let platform of this.platforms) {
+      if (rect.x < platform.x + platform.width &&
+          rect.x + rect.width > platform.x &&
+          rect.y < platform.y + platform.height &&
+          rect.y + rect.height > platform.y) {
+        return platform;
+      }
+    }
+    return null;
+  },
+  
+  clear() {
+    this.platforms = [];
+  }
+};
 
 // High Score System
 let highScores = [];
@@ -278,20 +496,233 @@ let crystals = [];
 let portal = {};
 let bullets = [];
 let particles = [];
+let obstacles = [];
+
+// Enhanced Enemy System with Animation
+class AnimatedEnemy {
+  constructor(x, y, type = 'slime') {
+    this.x = x;
+    this.y = y;
+    this.w = 40;
+    this.h = 40;
+    this.type = type;
+    this.speed = 2;
+    this.alive = true;
+    this.direction = -1; // -1 left, 1 right
+    this.animFrame = 0;
+    this.animTimer = 0;
+    this.animSpeed = 0.2;
+    this.patrol = {
+      start: x - 100,
+      end: x + 100,
+      active: true
+    };
+    
+    // Flying enemies have different behavior
+    if (type === 'fly') {
+      this.flyHeight = y;
+      this.bobOffset = 0;
+      this.bobSpeed = 0.1;
+    }
+  }
+  
+  update() {
+    if (!this.alive) return;
+    
+    // Animation
+    this.animTimer += this.animSpeed;
+    if (this.animTimer >= 1) {
+      this.animFrame = (this.animFrame + 1) % 2;
+      this.animTimer = 0;
+    }
+    
+    // Movement based on type
+    if (this.type === 'fly') {
+      this.updateFlyMovement();
+    } else {
+      this.updateGroundMovement();
+    }
+  }
+  
+  updateGroundMovement() {
+    // Patrol behavior
+    if (this.patrol.active) {
+      this.x += this.speed * this.direction;
+      
+      if (this.x <= this.patrol.start || this.x >= this.patrol.end) {
+        this.direction *= -1;
+      }
+    }
+  }
+  
+  updateFlyMovement() {
+    // Flying pattern with bobbing
+    this.x += this.speed * this.direction * 0.7;
+    this.bobOffset += this.bobSpeed;
+    this.y = this.flyHeight + Math.sin(this.bobOffset) * 15;
+    
+    // Change direction randomly or when hitting patrol bounds
+    if (this.x <= this.patrol.start || this.x >= this.patrol.end) {
+      this.direction *= -1;
+    }
+  }
+  
+  render() {
+    if (!this.alive) return;
+    
+    let imageName = '';
+    if (this.type === 'slime') {
+      imageName = `slimeWalk${this.animFrame + 1}`;
+    } else if (this.type === 'fly') {
+      imageName = `flyFly${this.animFrame + 1}`;
+    }
+    
+    const img = assetManager.get(imageName);
+    if (img) {
+      ctx.save();
+      
+      // Flip sprite based on direction
+      if (this.direction === 1) {
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, -this.x - this.w, this.y, this.w, this.h);
+      } else {
+        ctx.drawImage(img, this.x, this.y, this.w, this.h);
+      }
+      
+      ctx.restore();
+    } else {
+      // Fallback to colored rectangle
+      ctx.fillStyle = this.type === 'fly' ? '#8A2BE2' : '#FF4500';
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+    }
+  }
+  
+  getBounds() {
+    return {
+      x: this.x,
+      y: this.y,
+      width: this.w,
+      height: this.h
+    };
+  }
+}
+
+// Enhanced Level System with Obstacles
+function createObstacle(x, y, width, height, type = 'box') {
+  return {
+    x, y, width, height, type,
+    render() {
+      const img = assetManager.get(this.type);
+      if (img) {
+        // Tile the obstacle image
+        for (let i = 0; i < this.width; i += 70) {
+          for (let j = 0; j < this.height; j += 70) {
+            ctx.drawImage(img, this.x + i, this.y + j, 
+              Math.min(70, this.width - i), 
+              Math.min(70, this.height - j));
+          }
+        }
+      } else {
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+      }
+    }
+  };
+}
 
 function loadLevel(levelIndex) {
   const level = levels[levelIndex];
-  enemies = level.enemies.map(e => ({ 
-    ...e, 
-    w: 40, 
-    h: 40, 
-    speed: 2 + levelIndex * 0.5, // Increased difficulty
-    alive: true 
-  }));
+  
+  // Create animated enemies
+  enemies = level.enemies.map(e => {
+    const enemyType = e.type || (Math.random() > 0.5 ? 'slime' : 'fly');
+    const enemy = new AnimatedEnemy(e.x, e.y, enemyType);
+    enemy.speed = 2 + levelIndex * 0.5;
+    return enemy;
+  });
+  
   crystals = level.crystals.map(c => ({ ...c, collected: false }));
   powerUps = level.powerUps.map(p => ({ ...p, w: 30, h: 30, collected: false }));
   portal = { ...level.portal, w: 40, h: 40 };
-  ground.w = 4000 + levelIndex * 500; // Longer levels
+  
+  // Clear obstacles and platforms
+  obstacles = [];
+  platformSystem.clear();
+  
+  // Create varied platform layouts based on level
+  if (levelIndex === 0) {
+    // Beginner level - simple platforms
+    platformSystem.createPlatform(0, 480, 400, 'grass');
+    platformSystem.createPlatform(500, 450, 200, 'grass');
+    platformSystem.createPlatform(800, 420, 250, 'grass');
+    platformSystem.createPlatform(1200, 480, 300, 'grass');
+    platformSystem.createPlatform(1600, 450, 200, 'grass');
+  } else if (levelIndex === 1) {
+    // Intermediate - more gaps and heights
+    platformSystem.createPlatform(0, 480, 300, 'grass');
+    platformSystem.createPlatform(400, 400, 150, 'grass');
+    platformSystem.createPlatform(650, 350, 200, 'grass');
+    platformSystem.createPlatform(950, 300, 180, 'grass');
+    platformSystem.createPlatform(1200, 380, 250, 'grass');
+    platformSystem.createPlatform(1550, 430, 200, 'grass');
+  } else if (levelIndex === 2) {
+    // Advanced - vertical challenges
+    platformSystem.createPlatform(0, 480, 250, 'grass');
+    platformSystem.createPlatform(350, 380, 120, 'grass');
+    platformSystem.createPlatform(550, 280, 150, 'grass');
+    platformSystem.createPlatform(800, 200, 120, 'grass');
+    platformSystem.createPlatform(1000, 320, 180, 'grass');
+    platformSystem.createPlatform(1300, 400, 200, 'grass');
+  } else if (levelIndex === 3) {
+    // Expert - precise jumping required
+    platformSystem.createPlatform(0, 480, 200, 'grass');
+    platformSystem.createPlatform(300, 350, 100, 'grass');
+    platformSystem.createPlatform(500, 220, 120, 'grass');
+    platformSystem.createPlatform(750, 150, 100, 'grass');
+    platformSystem.createPlatform(950, 250, 150, 'grass');
+    platformSystem.createPlatform(1200, 380, 180, 'grass');
+    platformSystem.createPlatform(1500, 300, 200, 'grass');
+  } else {
+    // Master level - extreme difficulty
+    platformSystem.createPlatform(0, 480, 150, 'grass');
+    platformSystem.createPlatform(250, 380, 80, 'grass');
+    platformSystem.createPlatform(430, 250, 100, 'grass');
+    platformSystem.createPlatform(630, 150, 80, 'grass');
+    platformSystem.createPlatform(800, 200, 120, 'grass');
+    platformSystem.createPlatform(1000, 320, 100, 'grass');
+    platformSystem.createPlatform(1200, 400, 150, 'grass');
+    platformSystem.createPlatform(1450, 280, 180, 'grass');
+  }
+  
+  // Add dynamic obstacles for variety
+  const obstacleCount = 2 + levelIndex;
+  for (let i = 0; i < obstacleCount; i++) {
+    const x = 300 + (i * 400) + Math.random() * 100;
+    const y = 380 + Math.random() * 80;
+    const width = 70 + Math.random() * 70;
+    const height = 70;
+    const type = Math.random() > 0.5 ? 'box' : 'stone';
+    
+    // Don't place obstacles too close to player start
+    if (x > 200) {
+      obstacles.push(createObstacle(x, y, width, height, type));
+    }
+  }
+  if (levelIndex === 0) {
+    platformSystem.createPlatform(0, 480, 400, 'grass');
+    platformSystem.createPlatform(500, 400, 300, 'grass');
+    platformSystem.createPlatform(900, 450, 200, 'grass');
+    platformSystem.createPlatform(1200, 380, 250, 'grass');
+  } else if (levelIndex === 1) {
+    platformSystem.createPlatform(0, 480, 300, 'grass');
+    platformSystem.createPlatform(400, 420, 150, 'grass');
+    platformSystem.createPlatform(650, 360, 200, 'grass');
+    platformSystem.createPlatform(950, 300, 180, 'grass');
+    platformSystem.createPlatform(1200, 400, 300, 'grass');
+  }
+  // Add more platform configurations for other levels...
+  
+  ground.w = 4000 + levelIndex * 500;
   
   messageText.textContent = `Level ${levelIndex + 1}: ${level.name}`;
   setTimeout(() => { messageText.textContent = ""; }, 2000);
@@ -434,13 +865,62 @@ function update() {
   player.y += player.vy;
   clampPlayerPosition();
 
-  if (player.y + player.h > ground.y) {
-    player.y = ground.y - player.h;
+  // Enhanced collision with platforms
+  const platformCollision = platformSystem.checkCollision({
+    x: player.x,
+    y: player.y + player.vy,
+    width: player.w,
+    height: player.h
+  });
+
+  if (platformCollision && player.vy > 0) {
+    player.y = platformCollision.y - player.h;
     player.vy = 0;
     player.grounded = true;
     player.jumping = false;
     if (currentLevel > 0) player.hasDoubleJump = true; // Reset double jump on landing
   }
+
+  // Check collision with obstacles
+  obstacles.forEach(obstacle => {
+    if (player.x < obstacle.x + obstacle.width &&
+        player.x + player.w > obstacle.x &&
+        player.y < obstacle.y + obstacle.height &&
+        player.y + player.h > obstacle.y) {
+      
+      // Simple collision response - stop player movement
+      if (player.vx > 0) player.x = obstacle.x - player.w;
+      else if (player.vx < 0) player.x = obstacle.x + obstacle.width;
+      
+      if (player.vy > 0 && player.y < obstacle.y) {
+        player.y = obstacle.y - player.h;
+        player.vy = 0;
+        player.grounded = true;
+        player.jumping = false;
+        if (currentLevel > 0) player.hasDoubleJump = true;
+      }
+    }
+  });
+
+  // Ground collision (fallback)
+  if (player.y + player.h > ground.y) {
+    player.y = ground.y - player.h;
+    player.vy = 0;
+    player.grounded = true;
+    player.jumping = false;
+    if (currentLevel > 0) player.hasDoubleJump = true;
+  }
+
+  // Update background parallax
+  const scrollSpeed = Math.abs(player.vx) * 0.5 + 1;
+  backgroundSystem.update(scrollSpeed);
+
+  // Update animated enemies
+  enemies.forEach(enemy => {
+    if (enemy.update) {
+      enemy.update();
+    }
+  });
 
   updatePowerUps();
   handleShooting();
@@ -549,7 +1029,22 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
   ctx.translate(-cameraX, 0);
+  
+  // Draw enhanced background with parallax
   ctx.drawImage(bgImg, 0, 0, ground.w, canvas.height);
+  backgroundSystem.render();
+  
+  // Draw platforms using the new system
+  platformSystem.render();
+  
+  // Draw dynamic obstacles
+  obstacles.forEach(obstacle => {
+    if (obstacle.render) {
+      obstacle.render();
+    }
+  });
+  
+  // Draw ground
   ctx.fillStyle = "#333";
   ctx.fillRect(ground.x, ground.y, ground.w, ground.h);
 
@@ -592,10 +1087,16 @@ function draw() {
 
   ctx.drawImage(portalImg, portal.x, portal.y, portal.w, portal.h);
 
-  // Draw enemies with health indicator
+  // Draw enemies with enhanced animation
   enemies.forEach(enemy => {
     if (enemy.alive) {
-      ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.w, enemy.h);
+      if (enemy.render) {
+        enemy.render(); // Use new animated rendering
+      } else {
+        // Fallback for old enemy format
+        ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.w, enemy.h);
+      }
+      
       // Enemy danger indicator
       if (Math.abs(enemy.x - player.x) < 200) {
         ctx.fillStyle = "rgba(255,0,0,0.2)";
@@ -1044,13 +1545,34 @@ let gameStats = {
 };
 
 // Initialize game
-try {
-  console.log('Initializing Dark Forest Runner v3.0...');
-  loadSettings();
-  loadHighScores();
-  resetGame();
-  console.log('Game initialized successfully!');
-} catch (error) {
-  console.error('Initialization error:', error);
-  alert('Game failed to initialize. Please refresh the page.');
+async function initGame() {
+  try {
+    console.log('Initializing Dark Forest Runner v4.0...');
+    console.log('Loading assets...');
+    
+    // Load all assets
+    await assetManager.loadAll();
+    console.log(`Loaded ${assetManager.loaded} assets successfully`);
+    
+    // Initialize systems
+    backgroundSystem.init();
+    console.log('Background system initialized');
+    
+    loadSettings();
+    loadHighScores();
+    resetGame();
+    
+    console.log('Game initialized successfully!');
+    console.log('Enhanced features: Parallax backgrounds, animated enemies, platform system');
+  } catch (error) {
+    console.error('Initialization error:', error);
+    alert('Game failed to initialize. Please refresh the page.');
+  }
+}
+
+// Start initialization when page loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGame);
+} else {
+  initGame();
 }
