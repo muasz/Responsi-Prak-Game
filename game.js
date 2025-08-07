@@ -1,9 +1,33 @@
-// === Dark Forest Runner (v3.0) - Enhanced with Mobile, Settings, High Scores ===
+// === Dark Forest Runner (v3.0) - Enhanced Mobile-First Experience ===
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 960;
 canvas.height = 540;
+
+// Mobile detection
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                 ('ontouchstart' in window) || 
+                 (navigator.maxTouchPoints > 0);
+
+// Touch device optimization
+if (isMobile) {
+  // Prevent zoom on double tap
+  document.addEventListener('touchstart', function(e) {
+    if (e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+  
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function(e) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+}
 
 // UI
 const scoreText = document.getElementById("score");
@@ -14,7 +38,7 @@ const livesText = document.getElementById("lives");
 let gameSettings = {
   musicVolume: 0.5,
   sfxVolume: 0.7,
-  showMobileControls: true
+  showMobileControls: isMobile
 };
 
 // Load settings from localStorage
@@ -745,6 +769,13 @@ document.addEventListener("keydown", (e) => {
 });
 
 // Mobile Controls Setup
+// Haptic feedback function for mobile
+function vibrate(duration = 50) {
+  if (navigator.vibrate && isMobile) {
+    navigator.vibrate(duration);
+  }
+}
+
 function setupMobileControls() {
   try {
     const leftBtn = document.getElementById('leftBtn');
@@ -761,6 +792,7 @@ function setupMobileControls() {
   leftBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.left = true;
+    vibrate(30);
     console.log('Left button pressed');
   });
   leftBtn.addEventListener('touchend', (e) => {
@@ -772,6 +804,7 @@ function setupMobileControls() {
   rightBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.right = true;
+    vibrate(30);
     console.log('Right button pressed');
   });
   rightBtn.addEventListener('touchend', (e) => {
@@ -783,6 +816,7 @@ function setupMobileControls() {
   jumpBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.jump = true;
+    vibrate(50);
     console.log('Jump button pressed');
   });
   jumpBtn.addEventListener('touchend', (e) => {
@@ -794,6 +828,7 @@ function setupMobileControls() {
   shootBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     mobileInput.shoot = true;
+    vibrate(40);
     console.log('Shoot button pressed');
   });
   shootBtn.addEventListener('touchend', (e) => {
