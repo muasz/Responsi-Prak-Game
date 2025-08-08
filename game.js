@@ -386,16 +386,27 @@ const levelDisplay = {
   }
 };
 
-// Enhanced Asset Manager
+// Enhanced Asset Manager with Animation Support
 const assetManager = {
   images: {},
+  animations: {},
   loadQueue: [],
   loaded: 0,
   total: 0,
   
   loadImage(name, src) {
     this.total++;
-    this.loadQueue.push({name, src});
+    this.loadQueue.push({name, src, type: 'image'});
+  },
+  
+  // Load animation frames
+  loadAnimation(baseName, frameCount, pathTemplate) {
+    for (let i = 1; i <= frameCount; i++) {
+      const paddedNum = i.toString().padStart(2, '0');
+      const frameName = `${baseName}_${paddedNum}`;
+      const path = pathTemplate.replace('{i}', paddedNum);
+      this.loadImage(frameName, path);
+    }
   },
   
   async loadAll() {
@@ -423,6 +434,10 @@ const assetManager = {
     });
     
     await Promise.all(promises);
+    
+    // Setup animation arrays
+    this.setupAnimations();
+    
     loadingManager.updateProgress(100, "Ready to play!");
     
     // Small delay to show completion
@@ -433,15 +448,86 @@ const assetManager = {
     return this.images;
   },
   
+  setupAnimations() {
+    // Player walking animation
+    this.animations.playerWalk = [];
+    for (let i = 1; i <= 11; i++) {
+      const paddedNum = i.toString().padStart(2, '0');
+      const frameName = `player_walk_${paddedNum}`;
+      if (this.images[frameName]) {
+        this.animations.playerWalk.push(this.images[frameName]);
+      }
+    }
+    
+    // Enemy animations
+    this.animations.slimeWalk = [
+      this.images.enemy_slime1,
+      this.images.enemy_slime2
+    ].filter(img => img);
+    
+    this.animations.flyMove = [
+      this.images.enemy_fly1,
+      this.images.enemy_fly2
+    ].filter(img => img);
+    
+    this.animations.snailWalk = [
+      this.images.enemy_snail1,
+      this.images.enemy_snail2
+    ].filter(img => img);
+    
+    console.log('Animations setup complete:', Object.keys(this.animations));
+  },
+  
   get(name) {
     return this.images[name];
+  },
+  
+  getAnimation(name) {
+    return this.animations[name] || [];
   }
 };
 
 // Load enhanced assets
-assetManager.loadImage('player', 'assets/images/player.png');
-assetManager.loadImage('enemy', 'assets/images/enemy.png');
-assetManager.loadImage('crystal', 'assets/images/crystal.png');
+// Player assets
+assetManager.loadImage('player_idle', 'kenney_platformer-art-deluxe/Base pack/Player/p1_front.png');
+assetManager.loadImage('player_jump', 'kenney_platformer-art-deluxe/Base pack/Player/p1_jump.png');
+assetManager.loadImage('player_hurt', 'kenney_platformer-art-deluxe/Base pack/Player/p1_hurt.png');
+assetManager.loadImage('player_duck', 'kenney_platformer-art-deluxe/Base pack/Player/p1_duck.png');
+
+// Player walking animation (11 frames)
+assetManager.loadAnimation('player_walk', 11, 'kenney_platformer-art-deluxe/Base pack/Player/p1_walk/PNG/p1_walk{i}.png');
+
+// Enhanced enemies
+assetManager.loadImage('enemy_slime1', 'kenney_platformer-art-deluxe/Base pack/Enemies/slimeWalk1.png');
+assetManager.loadImage('enemy_slime2', 'kenney_platformer-art-deluxe/Base pack/Enemies/slimeWalk2.png');
+assetManager.loadImage('enemy_fly1', 'kenney_platformer-art-deluxe/Base pack/Enemies/flyFly1.png');
+assetManager.loadImage('enemy_fly2', 'kenney_platformer-art-deluxe/Base pack/Enemies/flyFly2.png');
+assetManager.loadImage('enemy_snail1', 'kenney_platformer-art-deluxe/Base pack/Enemies/snailWalk1.png');
+assetManager.loadImage('enemy_snail2', 'kenney_platformer-art-deluxe/Base pack/Enemies/snailWalk2.png');
+
+// Enhanced collectibles
+assetManager.loadImage('crystal_gold', 'kenney_platformer-art-deluxe/Base pack/Items/coinGold.png');
+assetManager.loadImage('crystal_silver', 'kenney_platformer-art-deluxe/Base pack/Items/coinSilver.png');
+assetManager.loadImage('gem_green', 'kenney_platformer-art-deluxe/Base pack/Items/gemGreen.png');
+assetManager.loadImage('gem_red', 'kenney_platformer-art-deluxe/Base pack/Items/gemRed.png');
+assetManager.loadImage('gem_yellow', 'kenney_platformer-art-deluxe/Base pack/Items/gemYellow.png');
+assetManager.loadImage('star_powerup', 'kenney_platformer-art-deluxe/Base pack/Items/star.png');
+
+// Environmental elements
+assetManager.loadImage('cloud1', 'kenney_platformer-art-deluxe/Base pack/Items/cloud1.png');
+assetManager.loadImage('cloud2', 'kenney_platformer-art-deluxe/Base pack/Items/cloud2.png');
+assetManager.loadImage('cloud3', 'kenney_platformer-art-deluxe/Base pack/Items/cloud3.png');
+assetManager.loadImage('bush', 'kenney_platformer-art-deluxe/Base pack/Items/bush.png');
+assetManager.loadImage('plant', 'kenney_platformer-art-deluxe/Base pack/Items/plant.png');
+assetManager.loadImage('plant_purple', 'kenney_platformer-art-deluxe/Base pack/Items/plantPurple.png');
+
+// Goal elements
+assetManager.loadImage('flag_goal', 'kenney_platformer-art-deluxe/Base pack/Items/flagGreen.png');
+
+// Original fallback assets
+assetManager.loadImage('player_original', 'assets/images/player.png');
+assetManager.loadImage('enemy_original', 'assets/images/enemy.png');
+assetManager.loadImage('crystal_original', 'assets/images/crystal.png');
 assetManager.loadImage('bullet', 'assets/images/bullet.png');
 assetManager.loadImage('portal', 'assets/images/portal.png');
 
@@ -728,17 +814,269 @@ let mobileInput = {
 document.addEventListener("keydown", (e) => keys[e.code] = true);
 document.addEventListener("keyup", (e) => keys[e.code] = false);
 
-// Player
-const player = {
-  x: 100, y: 400, w: 40, h: 60,
-  vx: 0, vy: 0,
-  speed: 5,
-  jumping: false,
-  grounded: false,
-  hasDoubleJump: false,
-  hasFastShoot: false,
-  powerUpTimer: 0
-};
+// Enhanced Animated Player Class
+class AnimatedPlayer {
+  constructor() {
+    this.x = 100;
+    this.y = 400;
+    this.w = 40;
+    this.h = 60;
+    this.vx = 0;
+    this.vy = 0;
+    this.speed = 5;
+    this.jumping = false;
+    this.grounded = false;
+    this.hasDoubleJump = false;
+    this.hasFastShoot = false;
+    this.powerUpTimer = 0;
+    
+    // Animation properties
+    this.state = 'idle'; // idle, walking, jumping, hurt, ducking
+    this.frame = 0;
+    this.frameTimer = 0;
+    this.frameSpeed = 8; // frames per second
+    this.facing = 1; // 1 for right, -1 for left
+    this.lastDirection = 0;
+    
+    // Smooth movement
+    this.targetX = this.x;
+    this.smoothing = 0.15;
+    
+    // Visual effects
+    this.dustParticles = [];
+    this.afterImages = [];
+  }
+  
+  update() {
+    this.frameTimer++;
+    
+    // Determine animation state
+    this.updateAnimationState();
+    
+    // Update frame animation
+    if (this.frameTimer >= 60 / this.frameSpeed) {
+      this.frame++;
+      this.frameTimer = 0;
+      
+      // Reset frame based on animation
+      const walkFrames = assetManager.getAnimation('playerWalk');
+      if (this.state === 'walking' && walkFrames.length > 0) {
+        if (this.frame >= walkFrames.length) this.frame = 0;
+      } else {
+        this.frame = 0; // Static states don't animate
+      }
+    }
+    
+    // Smooth movement interpolation
+    if (Math.abs(this.targetX - this.x) > 0.1) {
+      this.x += (this.targetX - this.x) * this.smoothing;
+    }
+    
+    // Update dust particles
+    this.updateDustParticles();
+    
+    // Update after images for fast movement
+    this.updateAfterImages();
+  }
+  
+  updateAnimationState() {
+    const prevState = this.state;
+    
+    if (this.powerUpTimer > 0 && this.powerUpTimer % 10 < 5) {
+      this.state = 'hurt'; // Flashing when powered up
+    } else if (!this.grounded && this.vy !== 0) {
+      this.state = 'jumping';
+    } else if (keys['KeyS'] || keys['ArrowDown']) {
+      this.state = 'ducking';
+    } else if (keys['KeyA'] || keys['ArrowLeft'] || keys['KeyD'] || keys['ArrowRight']) {
+      this.state = 'walking';
+      
+      // Update facing direction
+      if (keys['KeyA'] || keys['ArrowLeft']) {
+        this.facing = -1;
+        this.lastDirection = -1;
+      } else if (keys['KeyD'] || keys['ArrowRight']) {
+        this.facing = 1;
+        this.lastDirection = 1;
+      }
+      
+      // Create dust particles when walking
+      if (this.grounded && Math.random() < 0.3) {
+        this.createDustParticle();
+      }
+    } else {
+      this.state = 'idle';
+    }
+    
+    // Reset frame when state changes
+    if (prevState !== this.state) {
+      this.frame = 0;
+      this.frameTimer = 0;
+    }
+  }
+  
+  createDustParticle() {
+    this.dustParticles.push({
+      x: this.x + this.w / 2 + (Math.random() - 0.5) * this.w,
+      y: this.y + this.h - 5,
+      vx: (Math.random() - 0.5) * 2,
+      vy: -Math.random() * 2,
+      life: 20,
+      maxLife: 20,
+      size: Math.random() * 3 + 1
+    });
+  }
+  
+  updateDustParticles() {
+    for (let i = this.dustParticles.length - 1; i >= 0; i--) {
+      const p = this.dustParticles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.1; // gravity
+      p.life--;
+      
+      if (p.life <= 0) {
+        this.dustParticles.splice(i, 1);
+      }
+    }
+  }
+  
+  updateAfterImages() {
+    // Create after images for fast movement
+    if (Math.abs(this.vx) > 3 || this.hasFastShoot) {
+      this.afterImages.push({
+        x: this.x,
+        y: this.y,
+        life: 10,
+        maxLife: 10,
+        state: this.state,
+        frame: this.frame,
+        facing: this.facing
+      });
+    }
+    
+    // Update after images
+    for (let i = this.afterImages.length - 1; i >= 0; i--) {
+      this.afterImages[i].life--;
+      if (this.afterImages[i].life <= 0) {
+        this.afterImages.splice(i, 1);
+      }
+    }
+  }
+  
+  draw(ctx) {
+    // Draw after images first
+    this.drawAfterImages(ctx);
+    
+    // Draw dust particles
+    this.drawDustParticles(ctx);
+    
+    // Get appropriate sprite
+    let sprite = this.getCurrentSprite();
+    
+    if (sprite) {
+      ctx.save();
+      
+      // Flip sprite if facing left
+      if (this.facing === -1) {
+        ctx.scale(-1, 1);
+        ctx.drawImage(sprite, -(this.x + this.w), this.y, this.w, this.h);
+      } else {
+        ctx.drawImage(sprite, this.x, this.y, this.w, this.h);
+      }
+      
+      ctx.restore();
+      
+      // Power-up glow effect
+      if (this.powerUpTimer > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = this.hasDoubleJump ? '#00ff00' : '#ff0000';
+        ctx.fillRect(this.x - 2, this.y - 2, this.w + 4, this.h + 4);
+        ctx.restore();
+      }
+    } else {
+      // Fallback rectangle if no sprite
+      ctx.fillStyle = "#4CAF50";
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+    }
+  }
+  
+  getCurrentSprite() {
+    switch (this.state) {
+      case 'walking':
+        const walkFrames = assetManager.getAnimation('playerWalk');
+        if (walkFrames.length > 0) {
+          return walkFrames[this.frame % walkFrames.length];
+        }
+        return assetManager.get('player_idle') || assetManager.get('player_original');
+        
+      case 'jumping':
+        return assetManager.get('player_jump') || assetManager.get('player_original');
+        
+      case 'hurt':
+        return assetManager.get('player_hurt') || assetManager.get('player_original');
+        
+      case 'ducking':
+        return assetManager.get('player_duck') || assetManager.get('player_original');
+        
+      default: // idle
+        return assetManager.get('player_idle') || assetManager.get('player_original');
+    }
+  }
+  
+  drawAfterImages(ctx) {
+    ctx.save();
+    for (const afterImage of this.afterImages) {
+      const alpha = afterImage.life / afterImage.maxLife * 0.3;
+      ctx.globalAlpha = alpha;
+      
+      let sprite = assetManager.get('player_idle') || assetManager.get('player_original');
+      if (sprite) {
+        if (afterImage.facing === -1) {
+          ctx.scale(-1, 1);
+          ctx.drawImage(sprite, -(afterImage.x + this.w), afterImage.y, this.w, this.h);
+          ctx.scale(-1, 1);
+        } else {
+          ctx.drawImage(sprite, afterImage.x, afterImage.y, this.w, this.h);
+        }
+      }
+    }
+    ctx.restore();
+  }
+  
+  drawDustParticles(ctx) {
+    ctx.save();
+    for (const p of this.dustParticles) {
+      const alpha = p.life / p.maxLife;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
+    ctx.restore();
+  }
+  
+  // Reset method for level changes
+  reset() {
+    this.x = 100;
+    this.y = 400;
+    this.vx = 0;
+    this.vy = 0;
+    this.jumping = false;
+    this.grounded = false;
+    this.hasDoubleJump = false;
+    this.hasFastShoot = false;
+    this.powerUpTimer = 0;
+    this.state = 'idle';
+    this.frame = 0;
+    this.frameTimer = 0;
+    this.dustParticles = [];
+    this.afterImages = [];
+  }
+}
+
+// Create enhanced player instance
+const player = new AnimatedPlayer();
 
 // Ground
 const ground = { x: 0, y: 500, w: 5000, h: 50 };
@@ -888,16 +1226,33 @@ class AnimatedEnemy {
       active: true
     };
     
+    // Enhanced visual properties
+    this.scale = 1;
+    this.targetScale = 1;
+    this.rotation = 0;
+    this.alpha = 1;
+    this.shadowOffset = 0;
+    
+    // Particle effects
+    this.moveParticles = [];
+    this.deathParticles = [];
+    
     // Flying enemies have different behavior
     if (type === 'fly') {
       this.flyHeight = y;
       this.bobOffset = 0;
       this.bobSpeed = 0.1;
+      this.speed = 1.5;
+    } else if (type === 'snail') {
+      this.speed = 1; // Slower than slime
     }
   }
   
   update() {
-    if (!this.alive) return;
+    if (!this.alive) {
+      this.updateDeathAnimation();
+      return;
+    }
     
     // Animation
     this.animTimer += this.animSpeed;
@@ -906,30 +1261,216 @@ class AnimatedEnemy {
       this.animTimer = 0;
     }
     
+    // Smooth scaling
+    this.scale += (this.targetScale - this.scale) * 0.2;
+    
     // Movement based on type
     if (this.type === 'fly') {
       this.updateFlyMovement();
     } else {
       this.updateGroundMovement();
     }
+    
+    // Update particles
+    this.updateParticles();
+    
+    // Create movement particles occasionally
+    if (Math.random() < 0.1) {
+      this.createMoveParticle();
+    }
   }
   
   updateGroundMovement() {
-    // Patrol behavior
-    if (this.patrol.active) {
-      this.x += this.speed * this.direction;
-      
-      if (this.x <= this.patrol.start || this.x >= this.patrol.end) {
-        this.direction *= -1;
-      }
+    // Patrol behavior with smooth direction changes
+    this.x += this.speed * this.direction;
+    
+    // Add slight bouncing for slimes
+    if (this.type === 'slime') {
+      this.shadowOffset = Math.sin(this.animFrame * Math.PI) * 2;
+    }
+    
+    if (this.x <= this.patrol.start || this.x >= this.patrol.end) {
+      this.direction *= -1;
+      this.targetScale = 1.2; // Squeeze effect when turning
+      setTimeout(() => { this.targetScale = 1; }, 200);
     }
   }
   
   updateFlyMovement() {
-    // Flying pattern with bobbing
+    // Flying pattern with enhanced bobbing
     this.x += this.speed * this.direction * 0.7;
     this.bobOffset += this.bobSpeed;
     this.y = this.flyHeight + Math.sin(this.bobOffset) * 15;
+    
+    // Wing flapping rotation
+    this.rotation = Math.sin(this.animFrame * Math.PI * 2) * 0.1;
+    
+    // Change direction at patrol bounds
+    if (this.x <= this.patrol.start || this.x >= this.patrol.end) {
+      this.direction *= -1;
+    }
+  }
+  
+  createMoveParticle() {
+    this.moveParticles.push({
+      x: this.x + this.w / 2 + (Math.random() - 0.5) * this.w,
+      y: this.y + this.h + Math.random() * 5,
+      vx: (Math.random() - 0.5) * 1,
+      vy: -Math.random() * 1,
+      life: 15,
+      maxLife: 15,
+      size: Math.random() * 2 + 1,
+      color: this.type === 'fly' ? '#87CEEB' : this.type === 'slime' ? '#90EE90' : '#8B4513'
+    });
+  }
+  
+  updateParticles() {
+    // Update move particles
+    for (let i = this.moveParticles.length - 1; i >= 0; i--) {
+      const p = this.moveParticles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.05; // gravity
+      p.life--;
+      
+      if (p.life <= 0) {
+        this.moveParticles.splice(i, 1);
+      }
+    }
+    
+    // Update death particles
+    for (let i = this.deathParticles.length - 1; i >= 0; i--) {
+      const p = this.deathParticles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.1;
+      p.life--;
+      p.rotation += p.rotSpeed;
+      
+      if (p.life <= 0) {
+        this.deathParticles.splice(i, 1);
+      }
+    }
+  }
+  
+  die() {
+    this.alive = false;
+    this.alpha = 1;
+    
+    // Create death explosion particles
+    for (let i = 0; i < 8; i++) {
+      this.deathParticles.push({
+        x: this.x + this.w / 2,
+        y: this.y + this.h / 2,
+        vx: (Math.random() - 0.5) * 8,
+        vy: -Math.random() * 6 - 2,
+        life: 30,
+        maxLife: 30,
+        size: Math.random() * 4 + 2,
+        rotation: 0,
+        rotSpeed: (Math.random() - 0.5) * 0.3,
+        color: this.type === 'fly' ? '#4169E1' : this.type === 'slime' ? '#32CD32' : '#A0522D'
+      });
+    }
+  }
+  
+  updateDeathAnimation() {
+    this.alpha -= 0.03;
+    this.scale += 0.02;
+    this.rotation += 0.1;
+    
+    if (this.alpha <= 0) {
+      this.alpha = 0;
+    }
+  }
+  
+  draw(ctx) {
+    // Draw movement particles
+    this.drawParticles(ctx, this.moveParticles);
+    
+    if (this.alive || this.alpha > 0) {
+      ctx.save();
+      
+      // Apply transformations
+      ctx.globalAlpha = this.alpha;
+      ctx.translate(this.x + this.w / 2, this.y + this.h / 2);
+      ctx.rotate(this.rotation);
+      ctx.scale(this.scale, this.scale);
+      
+      // Get sprite based on type and animation frame
+      let sprite = this.getSprite();
+      
+      if (sprite) {
+        // Flip sprite based on direction
+        if (this.direction === -1) {
+          ctx.scale(-1, 1);
+        }
+        
+        ctx.drawImage(sprite, -this.w / 2, -this.h / 2 + this.shadowOffset, this.w, this.h);
+      } else {
+        // Fallback shape
+        ctx.fillStyle = this.getColor();
+        ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+      }
+      
+      ctx.restore();
+      
+      // Draw shadow for ground enemies
+      if (this.type !== 'fly' && this.alive) {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
+        ctx.ellipse(this.x + this.w / 2, this.y + this.h + 5, this.w / 3, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    
+    // Draw death particles
+    this.drawParticles(ctx, this.deathParticles);
+  }
+  
+  getSprite() {
+    const animations = assetManager.getAnimation(`${this.type}Walk`) || 
+                     assetManager.getAnimation(`${this.type}Move`);
+    
+    if (animations.length > 0) {
+      return animations[this.animFrame % animations.length];
+    }
+    
+    // Fallback to individual sprites
+    const spriteName = `enemy_${this.type}${this.animFrame + 1}`;
+    return assetManager.get(spriteName) || assetManager.get('enemy_original');
+  }
+  
+  getColor() {
+    switch (this.type) {
+      case 'slime': return '#32CD32';
+      case 'fly': return '#4169E1';
+      case 'snail': return '#A0522D';
+      default: return '#FF6B6B';
+    }
+  }
+  
+  drawParticles(ctx, particles) {
+    ctx.save();
+    for (const p of particles) {
+      const alpha = p.life / p.maxLife;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color || '#888';
+      
+      if (p.rotation !== undefined) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        ctx.restore();
+      } else {
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      }
+    }
+    ctx.restore();
+  }
     
     // Change direction randomly or when hitting patrol bounds
     if (this.x <= this.patrol.start || this.x >= this.patrol.end) {
@@ -1206,11 +1747,9 @@ function updateParticles() {
 }
 
 function resetGame() {
-  player.x = 100; player.y = 400;
-  player.vx = 0; player.vy = 0;
-  player.hasDoubleJump = false;
-  player.hasFastShoot = false;
-  player.powerUpTimer = 0;
+  // Reset enhanced player
+  player.reset();
+  
   score = 0; cameraX = 0;
   lives = 3;
   gameOver = false; started = false; invincible = false;
@@ -1260,6 +1799,9 @@ function update() {
     invincibleTimer--;
     if (invincibleTimer <= 0) invincible = false;
   }
+
+  // Update enhanced player animations
+  player.update();
 
   // Handle both keyboard and mobile input
   if (keys["ArrowLeft"] || mobileInput.left) player.vx = -player.speed;
@@ -1547,35 +2089,164 @@ function draw() {
   // Draw ground
   ctx.fillStyle = "#333";
   ctx.fillRect(ground.x, ground.y, ground.w, ground.h);
-
-  // Draw crystals
-  crystals.forEach(c => {
+  // Draw enhanced crystals and collectibles
+  crystals.forEach((c, index) => {
     if (!c.collected) {
-      ctx.drawImage(crystalImg, c.x, c.y, 30, 30);
-      // Add sparkle effect
-      if (Math.random() < 0.3) {
-        ctx.fillStyle = "rgba(255,255,255,0.8)";
-        ctx.fillRect(c.x + Math.random() * 30, c.y + Math.random() * 30, 2, 2);
+      // Enhanced crystal animation
+      const time = Date.now() * 0.005;
+      const bobOffset = Math.sin(time + index * 0.5) * 3;
+      const scaleOffset = 1 + Math.sin(time * 2 + index) * 0.1;
+      
+      ctx.save();
+      ctx.translate(c.x + 15, c.y + 15 + bobOffset);
+      ctx.scale(scaleOffset, scaleOffset);
+      
+      // Use enhanced crystal sprite or fallback
+      const crystalSprite = Math.random() < 0.33 ? 
+        assetManager.get('crystal_gold') : 
+        Math.random() < 0.5 ? 
+          assetManager.get('gem_green') : 
+          assetManager.get('gem_yellow');
+      
+      if (crystalSprite) {
+        ctx.drawImage(crystalSprite, -15, -15, 30, 30);
+      } else {
+        // Fallback crystal
+        ctx.drawImage(crystalImg, -15, -15, 30, 30);
+      }
+      
+      ctx.restore();
+      
+      // Enhanced sparkle effect
+      if (Math.random() < 0.4) {
+        const sparkleX = c.x + Math.random() * 30;
+        const sparkleY = c.y + Math.random() * 30 + bobOffset;
+        ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.8 + 0.2})`;
+      ctx.fillText(symbol, 0, 4);
+      
+      ctx.restore();
+      
+      // Collection hint when player is near
+      const distToPlayer = Math.abs(p.x - player.x);
+      if (distToPlayer < 80) {
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.strokeStyle = p.type === 'doubleJump' ? '#00FF00' : '#FF4500';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 4]);
+        ctx.strokeRect(p.x - 10, p.y - 10, p.w + 20, p.h + 20);
+        ctx.restore();
       }
     }
   });
 
-  // Draw power-ups
-  powerUps.forEach(p => {
+  // Draw enhanced portal with goal flag
+  const portalTime = Date.now() * 0.004;
+  const portalGlow = (Math.sin(portalTime) + 1) * 0.5;
+  
+  ctx.save();
+  
+  // Portal energy field
+  ctx.globalAlpha = 0.2 + portalGlow * 0.3;
+  ctx.fillStyle = '#00FFFF';
+  ctx.fillRect(portal.x - 10, portal.y - 10, portal.w + 20, portal.h + 20);
+  
+  ctx.globalAlpha = 1;
+  
+  // Use goal flag sprite or fallback to portal
+  const goalSprite = assetManager.get('flag_goal');
+  if (goalSprite) {
+    const flagBob = Math.sin(portalTime * 2) * 3;
+    ctx.drawImage(goalSprite, portal.x, portal.y + flagBob, portal.w, portal.h);
+    
+    // Add wind effect to flag
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = '#32CD32';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const waveY = portal.y + 10 + i * 5 + Math.sin(portalTime * 3 + i) * 2;
+      ctx.moveTo(portal.x + portal.w, waveY);
+      ctx.lineTo(portal.x + portal.w + 15, waveY);
+    }
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    ctx.drawImage(portalImg, portal.x, portal.y, portal.w, portal.h);
+  }
+  
+  ctx.restore();
+  
+  // Level completion indicator when player is near
+  const distToPortal = Math.abs(portal.x - player.x);
+  if (distToPortal < 100) {
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle = '#FFD700';
+    ctx.font = '16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏁 FINISH!', portal.x + portal.w / 2, portal.y - 20);
+    ctx.restore();
+  }
+      // Collection hint when player is near
+      const distToPlayer = Math.abs(c.x - player.x);
+      if (distToPlayer < 60) {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(c.x - 5, c.y - 5, 40, 40);
+        ctx.restore();
+      }
+    }
+  });
+
+  // Draw enhanced power-ups
+  powerUps.forEach((p, index) => {
     if (!p.collected) {
-      // Power-up background glow
-      ctx.fillStyle = "rgba(255,215,0,0.3)";
-      ctx.fillRect(p.x - 5, p.y - 5, p.w + 10, p.h + 10);
+      const time = Date.now() * 0.003;
+      const rotationOffset = Math.sin(time + index * 0.8) * 0.2;
+      const glowIntensity = (Math.sin(time * 2) + 1) * 0.5;
       
-      // Power-up icon
-      ctx.fillStyle = "#FFD700";
-      ctx.fillRect(p.x, p.y, p.w, p.h);
+      ctx.save();
+      ctx.translate(p.x + p.w / 2, p.y + p.h / 2);
+      ctx.rotate(rotationOffset);
       
-      // Power-up symbol
-      ctx.fillStyle = "#8B4513";
-      ctx.font = "12px Arial";
-      ctx.textAlign = "center";
-      let symbol = "?";
+      // Enhanced glow effect
+      ctx.globalAlpha = 0.3 + glowIntensity * 0.4;
+      ctx.fillStyle = p.type === 'doubleJump' ? '#00FF00' : '#FF4500';
+      ctx.fillRect(-p.w / 2 - 8, -p.h / 2 - 8, p.w + 16, p.h + 16);
+      
+      ctx.globalAlpha = 1;
+      
+      // Use appropriate sprite
+      let powerupSprite;
+      switch(p.type) {
+        case 'doubleJump':
+          powerupSprite = assetManager.get('mushroom_red');
+          break;
+        case 'fastShoot':
+          powerupSprite = assetManager.get('star_powerup');
+          break;
+        default:
+          powerupSprite = assetManager.get('mushroom_brown');
+      }
+      
+      if (powerupSprite) {
+        ctx.drawImage(powerupSprite, -p.w / 2, -p.h / 2, p.w, p.h);
+      } else {
+        // Fallback power-up visual
+        ctx.fillStyle = "#FFD700";
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        
+        // Power-up symbol
+        ctx.fillStyle = "#8B4513";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        let symbol = "?";
+        switch(p.type) {;
       switch(p.type) {
         case 'doubleJump': symbol = "↑↑"; break;
         case 'fastShoot': symbol = "💨"; break;
@@ -1608,17 +2279,9 @@ function draw() {
   // Draw player with power-up effects
   if (invincible && Math.floor(Date.now() / 100) % 2) {
     ctx.globalAlpha = 0.5;
-  }
-  
-  // Power-up visual effects
-  if (player.hasDoubleJump) {
-    ctx.fillStyle = "rgba(255,255,0,0.3)";
-    ctx.fillRect(player.x - 5, player.y - 5, player.w + 10, player.h + 10);
-  }
-  if (player.hasFastShoot) {
-    ctx.fillStyle = "rgba(255,100,0,0.3)";
-    ctx.fillRect(player.x - 3, player.y - 3, player.w + 6, player.h + 6);
-  }
+  // Draw enhanced player with animations
+  player.draw(ctx);
+  ctx.globalAlpha = 1;
   
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
   ctx.globalAlpha = 1;
